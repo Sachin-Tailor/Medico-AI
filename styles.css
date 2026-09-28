@@ -2084,21 +2084,350 @@ body {
   color: #92400e;
 }
 
-/* Mobile Responsive */
-@media (max-width: 900px) {
-  .hero-title { font-size: 2.2rem; }
-  .stats-banner, .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
-  .rx-scanner-grid { grid-template-columns: 1fr; }
-  .nav-links { display: none; }
-  .drbot-modal {
-    width: calc(100vw - 32px);
-    right: 16px;
-    bottom: 84px;
+/* ============================================================
+   COMPREHENSIVE MOBILE & TABLET RESPONSIVE DESIGN SYSTEM
+   ============================================================ */
+
+/* Global container and body bounds */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* Medium Screens & Tablets (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .container {
+    max-width: 100%;
+    padding: 0 20px;
+  }
+
+  .serve-hero-title {
+    font-size: 3.4rem;
+    max-width: 900px;
+  }
+
+  .medicines-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-banner, .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 600px) {
-  .stats-banner, .dashboard-grid { grid-template-columns: 1fr; }
-  .medicines-grid { grid-template-columns: 1fr; }
+/* Tablets & Small Laptops (max-width: 900px) */
+@media (max-width: 900px) {
+  .nav-links {
+    display: none;
+  }
+
+  .header-inner {
+    padding: 10px 16px;
+  }
+
+  .serve-hero-title {
+    font-size: 2.85rem;
+    letter-spacing: -1px;
+  }
+
+  .serve-stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    justify-items: center;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .rx-scanner-grid {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .drbot-modal {
+    width: calc(100vw - 28px);
+    max-width: calc(100vw - 28px);
+    right: 14px;
+    left: 14px;
+    bottom: 80px;
+    height: 78vh;
+    max-height: 78vh;
+    border-radius: 16px;
+  }
 }
+
+/* Standard Mobile Devices (max-width: 768px) */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .btn-drbot-quick {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  .btn-cart {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+  }
+
+  .btn-auth-header, .btn-admin-header {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  .hero {
+    padding: 30px 0 20px 0;
+  }
+
+  .hero-tag-serve {
+    font-size: 0.74rem;
+    padding: 4px 14px;
+    margin-bottom: 18px;
+  }
+
+  .serve-hero-title {
+    font-size: 2.3rem;
+    line-height: 1.18;
+    margin-bottom: 14px;
+  }
+
+  .serve-hero-subtitle {
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin-bottom: 24px;
+    padding: 0 8px;
+  }
+
+  .serve-search-box {
+    width: 100%;
+    max-width: 100%;
+    padding: 6px 8px 6px 14px;
+  }
+
+  .serve-search-btn {
+    padding: 10px 22px;
+    font-size: 0.88rem;
+  }
+
+  .serve-search-hints {
+    font-size: 0.82rem;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .hero-cta-group .btn-primary,
+  .hero-cta-group .btn-secondary {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+  }
+
+  .rx-scanner-wrapper {
+    padding: 20px 14px;
+    border-radius: 14px;
+  }
+
+  .rx-action-banner {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 14px;
+    padding: 16px 14px;
+  }
+
+  .rx-action-buttons {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .rx-action-buttons button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .medicines-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .medicine-card {
+    padding: 16px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .admin-portal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+/* Small Mobile Devices (max-width: 480px) */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+
+  .logo div span {
+    font-size: 0.95rem;
+  }
+
+  .header-actions .btn-admin-header {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+
+  .serve-hero-title {
+    font-size: 1.95rem;
+    letter-spacing: -0.5px;
+  }
+
+  .serve-stat-bubble {
+    width: 115px;
+    height: 115px;
+  }
+
+  .serve-stat-num {
+    font-size: 1.5rem;
+  }
+
+  .serve-stat-lbl {
+    font-size: 0.78rem;
+  }
+
+  .serve-heading {
+    font-size: 1.35rem;
+  }
+
+  .stepper-bar {
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+
+  .step-divider {
+    width: 16px;
+  }
+
+  .step-item span {
+    font-size: 0.7rem;
+  }
+
+  .step-circle {
+    width: 24px;
+    height: 24px;
+    font-size: 0.72rem;
+  }
+
+  .dropzone {
+    padding: 24px 12px;
+  }
+
+  .rx-preview-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .rx-preview-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .rx-matched-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .rx-matched-med-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .rx-matched-med-card button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .category-tab {
+    padding: 6px 14px;
+    font-size: 0.78rem;
+  }
+
+  .drbot-floating-launcher {
+    bottom: 14px;
+    right: 14px;
+    padding: 8px 14px;
+  }
+
+  .drbot-floating-launcher span {
+    display: none;
+  }
+
+  .drbot-modal {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    right: 8px !important;
+    left: 8px !important;
+    bottom: 68px !important;
+    height: 82vh !important;
+    max-height: 82vh !important;
+  }
+
+  .cart-drawer {
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  .modal-card {
+    width: calc(100vw - 20px) !important;
+    max-width: 100% !important;
+    padding: 18px 14px !important;
+    margin: 0 10px;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Table Horizontal Scrolling on Mobile */
+  .orders-list-table, .admin-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 

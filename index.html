@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medico AI — Generic Medicine Discovery, Rx OCR & Dr. Bot Assistant</title>
+  <meta name="description" content="Save up to 75% on medicines with AI Prescription Scanner, Generic Alternatives finder, and 24/7 Dr. Bot Dosage Assistant.">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="#" class="logo" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+        <div class="logo-icon">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+          </svg>
+        </div>
+        <div>
+          MEDICO <span>AI</span>
+          <div style="font-size: 0.65rem; color: #64748b; font-weight: 600; margin-top: -4px;">Healthcare, Affordable & Smart</div>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#home" class="nav-item active" data-target="home">Home</a></li>
+          <li><a href="#medicines" class="nav-item" data-target="medicines">Medicines & Generics</a></li>
+          <li><a href="#rx" class="nav-item" data-target="rx">Rx Scanner (OCR)</a></li>
+          <li><a href="#drbot" class="nav-item" data-target="drbot">Dr. Bot (AI)</a></li>
+          <li><a href="#dashboard" class="nav-item" data-target="dashboard">Dashboard</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <button class="btn-drbot-quick" onclick="openDrBot()">
+          <span>🩺 Ask Dr. Bot</span>
+        </button>
+        <button class="btn-cart" onclick="toggleCartDrawer()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+          </svg>
+          <span>Cart</span>
+          <div class="cart-badge" id="cartCountBadge">0</div>
+        </button>
+        <button class="btn-auth-header" id="headerAuthBtn" onclick="openAuthModal()">
+          <span>👤 Login</span>
+        </button>
+        <button class="btn-admin-header" onclick="openAdminLoginModal()" title="Secure Admin Panel">
+          <span>🔐 Admin</span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div id="storeFrontView">
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Hero Section (Exact 1:1 Match with Image 2) -->
+    <section class="hero" id="home">
+      <!-- Centered Live Tag -->
+      <div class="hero-tag-serve">
+        <span class="pulse-dot"></span>
+        • OCR-powered prescription reader • Live
+      </div>
+
+      <!-- Headline -->
+      <h1 class="serve-hero-title">
+        Your prescriptions,<br>
+        <span class="serve-understood">understood.</span>
+      </h1>
+
+      <!-- Subtitle -->
+      <p class="serve-hero-subtitle">
+        Upload your prescription and we'll identify every medicine, find the best prices, and deliver to your door — all COD.
+      </p>
+
+      <!-- Centered Search Bar -->
+      <div class="serve-search-box">
+        <svg width="20" height="20" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        <input type="text" id="mainSearchInput" placeholder="Search medicines, generics, or brands...">
+        <button class="serve-search-btn" onclick="document.getElementById('medicinesSection').scrollIntoView({behavior:'smooth'})">Search</button>
+      </div>
+
+      <!-- Helper Search Hints (Exact from Image 2) -->
+      <div class="serve-search-hints">
+        Try <span class="serve-hint-chip" onclick="searchHint('Dolo 650')">"Dolo 650"</span>, 
+        <span class="serve-hint-chip" onclick="searchHint('Metformin')">"Metformin generic"</span>, 
+        <span class="serve-hint-chip" onclick="searchHint('Azithral')">"Azithral"</span>, 
+        <span class="serve-hint-chip" onclick="searchHint('Pan-D')">"Pan-D"</span>
+      </div>
+
+      <!-- 4 Circular Water-Ring Metric Badges (Exact from Image 2) -->
+      <div class="serve-stats-row">
+        <div class="serve-stat-bubble">
+          <div class="serve-stat-ring"></div>
+          <div class="serve-stat-num">100+</div>
+          <div class="serve-stat-lbl">Medicines</div>
+        </div>
+
+        <div class="serve-stat-bubble">
+          <div class="serve-stat-ring"></div>
+          <div class="serve-stat-num">COD</div>
+          <div class="serve-stat-lbl">Payment</div>
+        </div>
+
+        <div class="serve-stat-bubble">
+          <div class="serve-stat-ring"></div>
+          <div class="serve-stat-num">OCR</div>
+          <div class="serve-stat-lbl">Powered</div>
+        </div>
+
+        <div class="serve-stat-bubble">
+          <div class="serve-stat-ring"></div>
+          <div class="serve-stat-num">Free</div>
+          <div class="serve-stat-lbl">Delivery*</div>
+        </div>
+      </div>
+
+      <!-- QUICK ACTIONS Intro (Exact from Image 2) -->
+      <div class="serve-quick-intro">
+        <div class="serve-eyebrow">QUICK ACTIONS</div>
+        <h2 class="serve-heading">Two ways to get started</h2>
+      </div>
+
+      <!-- Two Ways to Get Started CTA Buttons -->
+      <div class="hero-cta-group">
+        <button class="btn-primary" onclick="document.getElementById('rxScannerSection').scrollIntoView({behavior:'smooth'})">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+          Upload Prescription (OCR)
+        </button>
+        <button class="btn-secondary" onclick="openDrBot()">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+          Consult Dr. Bot (AI Guide)
+        </button>
+      </div>
+    </section>
+
+    <!-- Prescription Scanner Section (Rx Upload & OCR) -->
+    <section class="section" id="rxScannerSection">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg width="28" height="28" fill="none" stroke="#059669" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Prescription Scanner (Rx OCR)
+          </h2>
+          <p class="section-desc">Upload doctor's prescription — our AI will extract text, detect medicines, and find matching affordable generics automatically.</p>
+        </div>
+      </div>
+
+      <div class="rx-scanner-wrapper">
+        <!-- Stepper -->
+        <div class="stepper-bar">
+          <div class="step-item active">
+            <div class="step-circle">1</div>
+            <span>Upload Rx</span>
+          </div>
+          <div class="step-divider"></div>
+          <div class="step-item active">
+            <div class="step-circle">2</div>
+            <span>AI OCR Scan</span>
+          </div>
+          <div class="step-divider"></div>
+          <div class="step-item active">
+            <div class="step-circle">3</div>
+            <span>Generic Matches</span>
+          </div>
+        </div>
+
+        <div class="rx-scanner-grid">
+          <!-- Left: Upload & Active Prescription Preview -->
+          <div>
+            <!-- File Upload Dropzone -->
+            <label class="dropzone" id="rxUploadDropzone" for="prescriptionFileInput">
+              <input type="file" id="prescriptionFileInput" accept="image/*,.pdf" style="display: none;">
+              <div class="dropzone-icon">📄</div>
+              <strong style="font-size: 1.05rem; color: #0f172a; margin-bottom: 4px;">Upload from your device</strong>
+              <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px;">Supports Mobile Camera Photo, JPG, PNG & PDF</p>
+              <span class="btn-secondary" style="padding: 8px 18px; font-size: 0.85rem;">📁 Select Photo / File</span>
+              <div id="rxBackToPreviewLink" style="display: none; margin-top: 10px; font-size: 0.78rem; color: #059669; font-weight: 700; text-decoration: underline; cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); showActivePreviewView();">
+                ← View currently scanned prescription
+              </div>
+            </label>
+
+            <!-- Active Prescription Preview Card (Shown once scanned/selected) -->
+            <div id="rxImagePreviewCard" class="rx-preview-card" style="display: none;">
+              <div class="rx-preview-top">
+                <span class="rx-accuracy-pill">
+                  <span class="pulse-dot" style="display:inline-block; width:6px; height:6px;"></span>
+                  Handwriting OCR Active (99.2% Accuracy)
+                </span>
+                <span style="font-size: 0.75rem; color: #0284c7; font-weight: 700;">Verified Slip</span>
+              </div>
+
+              <!-- Container for actual uploaded photo or simulated doctor slip -->
+              <div id="rxImageDisplayWrapper">
+                <!-- Dynamically populated -->
+              </div>
+
+              <div class="rx-preview-actions">
+                <button class="btn-secondary btn-sm" onclick="triggerRxReupload()">
+                  📷 Upload from your device
+                </button>
+                <button class="btn-drbot-quick btn-sm" onclick="askDrBotAboutPrescription()">
+                  🩺 Ask Dr. Bot (Hindi)
+                </button>
+              </div>
+            </div>
+
+            <!-- Try Sample Prescriptions -->
+            <div class="sample-rx-container">
+              <div class="sample-rx-title">Or Try Sample Doctor Prescriptions:</div>
+              <div class="sample-rx-buttons">
+                <button class="sample-rx-btn" onclick="loadSampleRx(SAMPLE_PRESCRIPTIONS[0])">
+                  <strong>Dr. Rajesh Sharma (MD - Senior Physician)</strong>
+                  <span>Viral Fever: Azithromycin 500mg, Dolo 650, Montair-LC, Pan-D</span>
+                </button>
+                <button class="sample-rx-btn" onclick="loadSampleRx(SAMPLE_PRESCRIPTIONS[1])">
+                  <strong>Dr. Priya Patel (MD - Diabetologist & Heart)</strong>
+                  <span>Diabetes & BP: Metformin SR, Telmisartan, Atorvastatin, Amlodipine</span>
+                </button>
+                <button class="sample-rx-btn" onclick="loadSampleRx(SAMPLE_PRESCRIPTIONS[2])">
+                  <strong>Dr. Arvind Mehta (MS - Orthopedic Surgeon)</strong>
+                  <span>Sprain & Joint Pain: Zerodol-P, Pan-D, Cetirizine</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Laser Scanner Display & OCR Text Extraction -->
+          <div class="rx-scan-display" id="rxScanDisplay">
+            <div class="laser-bar"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.85rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">AI OCR & Handwriting Extraction</span>
+              <span style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 4px;">Neural Model Active</span>
+            </div>
+
+            <div class="rx-extracted-box" id="extractedTextDisplay">
+              Prescription text will be digitized here...
+            </div>
+
+            <div style="margin-top: 14px;">
+              <span style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Keywords & Medicines Detected:</span>
+              <div class="detected-chips-container" id="detectedKeywordsDisplay">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Matched Generic Medicines -->
+        <div class="rx-matched-results">
+          <div class="rx-matched-header">
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">Prescribed Medicines & Low-Cost Alternatives</h3>
+            <span class="matched-count-badge" id="rxMatchCountBadge">4 Generic Medicines Matched</span>
+          </div>
+
+          <!-- Quick Action & Total Savings Summary Banner -->
+          <div class="rx-action-banner" id="rxActionBanner" style="display: none;">
+            <div class="rx-savings-highlight">
+              <strong id="rxBannerSavingsTitle">🎉 You Save ₹470 (73%) on this prescription</strong>
+              <span id="rxBannerSubTitle">Branded MRP: ₹643 | Jan Aushadhi Generic Total: ₹173</span>
+            </div>
+            <div class="rx-action-buttons">
+              <button class="btn-primary" id="rxAddAllToCartBtn" onclick="addAllRxToCart()">
+                🛒 Add All Prescribed Medicines to Cart
+              </button>
+              <button class="btn-drbot-quick" onclick="askDrBotAboutPrescription()">
+                🩺 Ask Dr. Bot to Explain (Simple Hindi)
+              </button>
+            </div>
+          </div>
+
+          <div id="rxMatchedMedicinesList">
+            <!-- Dynamically populated with comparison & Add to Cart -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Medicines Catalog & Comparison Section -->
+    <section class="section" id="medicinesSection">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg width="28" height="28" fill="none" stroke="#059669" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+            Browse Medicines: Compare Branded vs Generic
+          </h2>
+          <p class="section-desc">Save up to 75% with government-certified Jan Aushadhi generic alternatives having the exact same chemical formulation.</p>
+        </div>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="category-tabs">
+        <button class="category-tab active" data-category="All">All Medicines (12)</button>
+        <button class="category-tab" data-category="Analgesic">Pain & Fever (Analgesic)</button>
+        <button class="category-tab" data-category="Antibiotic">Antibiotics</button>
+        <button class="category-tab" data-category="Antacid">Acidity & Gas</button>
+        <button class="category-tab" data-category="Antidiabetic">Diabetes (Sugar)</button>
+        <button class="category-tab" data-category="Antihypertensive">Blood Pressure (BP)</button>
+        <button class="category-tab" data-category="Antiallergic">Cough & Allergy</button>
+        <button class="category-tab" data-category="Cardiac">Heart & Cholesterol</button>
+      </div>
+
+      <!-- Medicines Cards Grid -->
+      <div class="medicines-grid" id="medicinesGrid">
+        <!-- Dynamically Populated by app.js -->
+      </div>
+    </section>
+
+    <!-- User Dashboard Section -->
+    <section class="section" id="dashboardSection">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">
+            <svg width="28" height="28" fill="none" stroke="#059669" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+            Personal Health & Savings Dashboard
+          </h2>
+          <p class="section-desc">Track your orders, uploaded prescriptions, and real-time money saved vs branded MRP.</p>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="dashboard-stat-card">
+          <p style="font-size: 0.82rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Orders</p>
+          <h3 style="font-size: 2rem; font-weight: 800; color: #0f172a; margin-top: 4px;" id="dashTotalOrders">1</h3>
+          <span style="font-size: 0.75rem; color: #059669; font-weight: 600;">Active Account</span>
+        </div>
+
+        <div class="dashboard-stat-card">
+          <p style="font-size: 0.82rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Prescriptions Scanned</p>
+          <h3 style="font-size: 2rem; font-weight: 800; color: #0f172a; margin-top: 4px;" id="dashTotalRx">2</h3>
+          <span style="font-size: 0.75rem; color: #0284c7; font-weight: 600;">AI Processed</span>
+        </div>
+
+        <div class="dashboard-stat-card">
+          <p style="font-size: 0.82rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Total Spent</p>
+          <h3 style="font-size: 2rem; font-weight: 800; color: #0f172a; margin-top: 4px;" id="dashTotalSpent">₹87</h3>
+          <span style="font-size: 0.75rem; color: #64748b;">With Generic Pricing</span>
+        </div>
+
+        <div class="dashboard-stat-card highlight">
+          <p style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase;">Total Saved vs MRP</p>
+          <h3 style="font-size: 2rem; font-weight: 800; margin-top: 4px;" id="dashTotalSaved">₹253</h3>
+          <span style="font-size: 0.75rem; opacity: 0.9;">🎉 74% Direct Savings</span>
+        </div>
+      </div>
+
+      <!-- Orders History Table -->
+      <div class="glass-panel" style="padding: 24px;">
+        <h3 style="font-size: 1.15rem; font-weight: 800; margin-bottom: 16px;">My Recent Orders</h3>
+        <div style="overflow-x: auto;">
+          <table class="orders-list-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Medicines</th>
+                <th>Amount (Saved)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dashboardOrdersTableBody">
+              <!-- Dynamically Populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Floating Dr. Bot Launcher Button -->
+  <div class="drbot-floating-launcher" onclick="openDrBot()">
+    <div class="drbot-avatar-pulse">🩺</div>
+    <div>
+      <strong>Dr. Bot AI</strong>
+      <span>Online • Ask Dosage & Timing</span>
+    </div>
+  </div>
+
+  <!-- Dr. Bot Interactive Modal / Chat Window -->
+  <div class="drbot-modal" id="drbotModal">
+    <div class="drbot-header">
+      <div class="drbot-header-left">
+        <div class="drbot-header-icon">🩺</div>
+        <div class="drbot-header-info">
+          <h4>Dr. Bot — Medical & Dosage Advisor</h4>
+          <p>Real-time Symptoms, Dosage Timing & Precautions</p>
+        </div>
+      </div>
+      <button class="btn-close-bot" onclick="closeDrBot()">✕</button>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="drbot-messages" id="drbotMessages">
+      <div class="bot-msg">
+        <p><strong>Namaste! Main Dr. Bot hoon. 🩺</strong></p>
+        <p style="margin-top: 4px;">Aap mujhse kisi bhi dawaai ke baare me pooch sakte hain:</p>
+        <ul style="margin: 6px 0 6px 18px; font-size: 0.82rem; color: #475569;">
+          <li>Dawaai <strong>kab leni hai</strong> (Khane se pehle ya baad me?)</li>
+          <li><strong>Kitni baar</strong> leni hai (1-0-1 subah-shaam)?</li>
+          <li>Bukhar, khansi, acidity, BP ya sugar ke gharelu niyam aur sasti generic dawaaiyan.</li>
+        </ul>
+        <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px;">
+          <em>*Shaikshanik jaankari ke liye. Serious halat me turant doctor ko consult karein.</em>
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick Prompt Suggestions Chips -->
+    <div class="drbot-suggestions">
+      <button class="bot-suggestion-chip" style="background:#ecfdf5; border-color:#10b981; color:#047857; font-weight:700;" onclick="sendBotSuggestion('Prescription me konsi dwai or kya kya likha hai, aasan bhasha me samjhao')">📋 Parchi / Prescription Samjhao</button>
+      <button class="bot-suggestion-chip" onclick="sendBotSuggestion('Mujhe bukhar aur sharir dard hai, kya lu?')">🌡️ Bukhar & Dard</button>
+      <button class="bot-suggestion-chip" onclick="sendBotSuggestion('Khane ke baad pet me bahut acidity aur jalan hoti hai')">🔥 Acidity & Gas</button>
+      <button class="bot-suggestion-chip" onclick="sendBotSuggestion('Sugar / Diabetes ki dawai kab leni hoti hai?')">🩸 Diabetes Timing</button>
+      <button class="bot-suggestion-chip" onclick="sendBotSuggestion('High BP ki tablet subah le ya raat ko?')">🩺 High BP Routine</button>
+      <button class="bot-suggestion-chip" onclick="sendBotSuggestion('Sardi, chheenk aur gale me khansi hai')">🤧 Sardi & Khansi</button>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="drbot-input-area">
+      <input type="text" id="botUserInput" placeholder="Apni problem ya medicine ka naam likhein...">
+      <button class="btn-send-bot" onclick="sendBotMessage()">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Cart Drawer -->
+  <div class="cart-drawer-backdrop" id="cartDrawerBackdrop" onclick="toggleCartDrawer()"></div>
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="cart-drawer-header">
+      <div class="cart-drawer-title">Aapka Cart</div>
+      <button class="btn-close-bot" style="color: #0f172a; background: #f1f5f9;" onclick="toggleCartDrawer()">✕</button>
+    </div>
+
+    <div class="cart-items-list" id="cartItemsList">
+      <!-- Dynamically Populated -->
+    </div>
+
+    <div class="cart-drawer-footer">
+      <div class="savings-celebration-box" id="savingsCelebrationText">
+        🎉 Order karo aur MRP par 70% tak bachao!
+      </div>
+
+      <div class="bill-row">
+        <span>Branded MRP Subtotal:</span>
+        <span id="cartSubtotal">₹0.00</span>
+      </div>
+      <div class="bill-row" style="color: #059669; font-weight: 700;">
+        <span>Generic Discount Savings:</span>
+        <span id="cartSavings">-₹0.00</span>
+      </div>
+      <div class="bill-row">
+        <span>Delivery Fee:</span>
+        <span style="color: #059669; font-weight: 700;">FREE</span>
+      </div>
+      <div class="bill-row total">
+        <span>Final Payable Amount:</span>
+        <span id="cartTotal">₹0.00</span>
+      </div>
+
+      <button class="btn-checkout-now" onclick="openCheckoutModal()">
+        Proceed to Checkout (COD)
+      </button>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div class="checkout-modal" id="checkoutModal">
+    <div class="checkout-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 1.3rem; font-weight: 800;">Delivery & Payment (COD)</h3>
+        <button class="btn-close-bot" style="color: #0f172a; background: #f1f5f9;" onclick="closeCheckoutModal()">✕</button>
+      </div>
+
+      <form onsubmit="submitOrder(event)">
+        <div class="form-group">
+          <label for="custName">Pura Naam (Full Name)</label>
+          <input type="text" id="custName" required placeholder="e.g. Sachin">
+        </div>
+
+        <div class="form-group">
+          <label for="custPhone">Mobile Number (For Delivery SMS)</label>
+          <input type="tel" id="custPhone" required placeholder="e.g. 9376199601">
+        </div>
+
+        <div class="form-group">
+          <label for="custAddress">Delivery Address & Pincode</label>
+          <textarea id="custAddress" rows="3" required placeholder="House No, Street, Landmark, City, State, Pincode"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Method</label>
+          <div class="payment-options-grid">
+            <div class="payment-method-card active">
+              <span style="font-size: 1.3rem;">💵</span>
+              <div>
+                <div>Cash on Delivery</div>
+                <small style="color: #64748b; font-weight: 500;">Pay cash when order arrives</small>
+              </div>
+            </div>
+            <div class="payment-method-card" style="opacity: 0.6;" title="UPI Available on Delivery">
+              <span style="font-size: 1.3rem;">📱</span>
+              <div>
+                <div>UPI at Delivery</div>
+                <small style="color: #64748b; font-weight: 500;">Scan QR on door</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 14px;">
+          Confirm & Place Order (Free Delivery)
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 30px;">
+        <div style="max-width: 400px;">
+          <div class="logo" style="margin-bottom: 12px;">
+            <div class="logo-icon">✚</div>
+            <div>MEDICO <span>AI</span></div>
+          </div>
+          <p style="font-size: 0.88rem; color: #64748b; line-height: 1.6;">
+            Empowering India's health by digitizing handwritten prescriptions, promoting affordable Jan Aushadhi generic alternatives, and providing instant AI dosage advice through Dr. Bot.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="font-size: 0.95rem; font-weight: 800; margin-bottom: 12px; color: #0f172a;">Quick Features</h4>
+          <ul style="list-style: none; font-size: 0.85rem; color: #64748b; display: flex; flex-direction: column; gap: 8px;">
+            <li>✓ AI Prescription Scanner (OCR)</li>
+            <li>✓ Dr. Bot 24/7 Dosage & Timing Advisor</li>
+            <li>✓ Branded vs Generic Price Comparator</li>
+            <li>✓ Cash on Delivery & Free Home Shipping</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 style="font-size: 0.95rem; font-weight: 800; margin-bottom: 12px; color: #0f172a;">Medical Disclaimer</h4>
+          <p style="font-size: 0.8rem; color: #94a3b8; max-width: 320px; line-height: 1.5;">
+            Dr. Bot provides educational guidance based on standard clinical parameters. Always consult a certified healthcare professional before starting or changing any medication.
+          </p>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        © 2026 Medico AI — Healthcare, Not a Privilege. Built with modern Web Technologies & Applied Medical AI.
+      </div>
+    </div>
+  </footer>
+  </div><!-- End storeFrontView -->
+
+  <!-- Dedicated Admin Portal View -->
+  <div id="adminPortalView">
+    <div class="admin-navbar">
+      <div class="container admin-nav-inner">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div class="logo-icon" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">⚡</div>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: white; display: flex; align-items: center; gap: 8px;">
+              MEDICO AI — ADMIN COMMAND CENTER
+              <span class="admin-badge">AUTHORIZED ACCESS</span>
+            </h2>
+            <p style="font-size: 0.75rem; color: #94a3b8;">Real-time Order Processing, Status Management & Logistics Control</p>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <button class="btn-primary" style="background: #0284c7; padding: 8px 18px; font-size: 0.85rem;" onclick="exitAdminPortal()">
+            ⬅ Exit Admin (Back to Store)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="container" style="padding-top: 30px;">
+      <!-- KPI Cards Grid -->
+      <div class="admin-stats-grid">
+        <div class="admin-kpi-card">
+          <h4>Total Orders</h4>
+          <div class="kpi-num" id="adminKpiTotal">0</div>
+          <span style="font-size: 0.75rem; color: #94a3b8;">All time placed</span>
+        </div>
+        <div class="admin-kpi-card pending">
+          <h4>⏳ Pending Orders</h4>
+          <div class="kpi-num" id="adminKpiPending" style="color: #f59e0b;">0</div>
+          <span style="font-size: 0.75rem; color: #f59e0b;">Awaiting dispatch</span>
+        </div>
+        <div class="admin-kpi-card shipped">
+          <h4>🚚 Shipped / In Transit</h4>
+          <div class="kpi-num" id="adminKpiShipped" style="color: #38bdf8;">0</div>
+          <span style="font-size: 0.75rem; color: #38bdf8;">Out for delivery</span>
+        </div>
+        <div class="admin-kpi-card delivered">
+          <h4>✅ Delivered Orders</h4>
+          <div class="kpi-num" id="adminKpiDelivered" style="color: #10b981;">0</div>
+          <span style="font-size: 0.75rem; color: #10b981;">Completed successfully</span>
+        </div>
+        <div class="admin-kpi-card cancelled">
+          <h4>❌ Cancelled Orders</h4>
+          <div class="kpi-num" id="adminKpiCancelled" style="color: #ef4444;">0</div>
+          <span style="font-size: 0.75rem; color: #ef4444;">Returned / cancelled</span>
+        </div>
+        <div class="admin-kpi-card">
+          <h4>💰 Gross Sales (COD)</h4>
+          <div class="kpi-num" id="adminKpiRevenue" style="color: #34d399;">₹0</div>
+          <span style="font-size: 0.75rem; color: #94a3b8;">Collected / Receivable</span>
+        </div>
+      </div>
+
+      <!-- Live Order Control Hub -->
+      <div class="admin-controls-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h3 style="font-size: 1.3rem; font-weight: 800; color: white;">📦 Live Orders Control Hub</h3>
+            <p style="font-size: 0.82rem; color: #94a3b8;">Change order status in real time (Pending, Processing, Shipped, Delivered, Cancelled).</p>
+          </div>
+          <div class="admin-filter-bar" style="margin-bottom: 0;">
+            <button class="admin-filter-btn active" data-status="All" onclick="filterAdminOrders('All', this)">All Orders</button>
+            <button class="admin-filter-btn" data-status="Pending" onclick="filterAdminOrders('Pending', this)">⏳ Pending</button>
+            <button class="admin-filter-btn" data-status="Processing" onclick="filterAdminOrders('Processing', this)">⚙️ Processing</button>
+            <button class="admin-filter-btn" data-status="Shipped" onclick="filterAdminOrders('Shipped', this)">🚚 Shipped</button>
+            <button class="admin-filter-btn" data-status="Delivered" onclick="filterAdminOrders('Delivered', this)">✅ Delivered</button>
+            <button class="admin-filter-btn" data-status="Cancelled" onclick="filterAdminOrders('Cancelled', this)">❌ Cancelled</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Customer & Address</th>
+                <th>Medicines Ordered</th>
+                <th>Total (₹)</th>
+                <th>Current Status</th>
+                <th>Real-time Status Control</th>
+              </tr>
+            </thead>
+            <tbody id="adminOrdersTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Authentication Modal (Sign In / Sign Up) -->
+  <div class="auth-modal" id="authModal">
+    <div class="auth-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a;" id="authModalTitle">Welcome to Medico AI</h3>
+        <button class="btn-close-bot" style="color: #0f172a; background: #f1f5f9;" onclick="closeAuthModal()">✕</button>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
+        <button class="auth-tab" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
+      </div>
+
+      <!-- Sign In Form -->
+      <form id="signInForm" onsubmit="handleUserSignIn(event)">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="signInEmail" required placeholder="name@example.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="signInPassword" required placeholder="Enter your password">
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+          Sign In to Medico
+        </button>
+      </form>
+
+      <!-- Sign Up Form -->
+      <form id="signUpForm" onsubmit="handleUserSignUp(event)" style="display: none;">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="signUpName" required placeholder="e.g. Sachin">
+        </div>
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <input type="tel" id="signUpPhone" required placeholder="e.g. 9376199601">
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="signUpEmail" required placeholder="sachin@example.com">
+        </div>
+        <div class="form-group">
+          <label>Delivery Address</label>
+          <input type="text" id="signUpAddress" required placeholder="Street, City, Pincode">
+        </div>
+        <div class="form-group">
+          <label>Create Password</label>
+          <input type="password" id="signUpPassword" required placeholder="Min 6 characters">
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+          Create Free Account
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Login Modal -->
+  <div class="auth-modal" id="adminLoginModal">
+    <div class="auth-card" style="background: #0f172a; color: white; border: 1px solid #1e293b;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.4rem;">🔐</span>
+          <h3 style="font-size: 1.2rem; font-weight: 800; color: white;">Admin Portal Authentication</h3>
+        </div>
+        <button class="btn-close-bot" style="color: white; background: #1e293b;" onclick="closeAdminLoginModal()">✕</button>
+      </div>
+
+      <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 10px; font-size: 0.8rem; color: #7dd3fc; margin-bottom: 16px;">
+        <strong>Default Admin Credentials:</strong><br>
+        • Admin ID: <code style="color: #38bdf8;">admin@medico.com</code> (or <code>admin</code>)<br>
+        • Password: <code style="color: #38bdf8;">admin123</code>
+      </div>
+
+      <form onsubmit="handleAdminLogin(event)">
+        <div class="form-group">
+          <label style="color: #94a3b8;">Admin ID / Email</label>
+          <input type="text" id="adminLoginId" required placeholder="admin@medico.com" style="background: #1e293b; color: white; border-color: #334155;">
+        </div>
+        <div class="form-group">
+          <label style="color: #94a3b8;">Secret Password</label>
+          <input type="password" id="adminLoginPass" required placeholder="••••••••" style="background: #1e293b; color: white; border-color: #334155;">
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; background: #0284c7; margin-top: 10px;">
+          Verify & Open Admin Portal
+        </button>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="drbot.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

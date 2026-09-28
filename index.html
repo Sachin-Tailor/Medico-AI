@@ -17,21 +17,36 @@
 <body>
 
   <!-- Top Header Navigation -->
+  <!-- Top Header Navigation -->
   <header class="header">
     <div class="container header-inner">
-      <a href="#" class="logo" onclick="window.scrollTo({top:0, behavior:'smooth'})">
-        <div class="logo-icon">
-          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+      <div class="header-left-group">
+        <!-- Mobile & Tablet Hamburger Menu Button -->
+        <button class="btn-hamburger" id="mobileMenuBtn" onclick="toggleMobileMenu()" aria-label="Open Navigation Menu">
+          <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
-        </div>
-        <div>
-          MEDICO <span>AI</span>
-          <div style="font-size: 0.65rem; color: #64748b; font-weight: 600; margin-top: -4px;">Healthcare, Affordable & Smart</div>
-        </div>
-      </a>
+        </button>
 
-      <nav>
+        <!-- Unbreakable Medico AI Logo -->
+        <a href="#" class="logo" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+          <div class="logo-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+            </svg>
+          </div>
+          <div class="logo-text-group">
+            <div class="logo-title-row">
+              <span class="logo-title-medico">MEDICO</span>
+              <span class="logo-badge-ai">AI</span>
+            </div>
+            <div class="logo-tagline">Healthcare, Affordable & Smart</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Desktop Nav Links -->
+      <nav class="desktop-nav">
         <ul class="nav-links">
           <li><a href="#home" class="nav-item active" data-target="home">Home</a></li>
           <li><a href="#medicines" class="nav-item" data-target="medicines">Medicines & Generics</a></li>
@@ -43,24 +58,92 @@
 
       <div class="header-actions">
         <button class="btn-drbot-quick" onclick="openDrBot()">
-          <span>🩺 Ask Dr. Bot</span>
+          <span>🩺 <span class="drbot-btn-text">Ask Dr. Bot</span></span>
         </button>
         <button class="btn-cart" onclick="toggleCartDrawer()">
-          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg width="19" height="19" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
           </svg>
-          <span>Cart</span>
+          <span class="cart-btn-text">Cart</span>
           <div class="cart-badge" id="cartCountBadge">0</div>
         </button>
-        <button class="btn-auth-header" id="headerAuthBtn" onclick="openAuthModal()">
+        <button class="btn-auth-header desktop-only-btn" id="headerAuthBtn" onclick="openAuthModal()">
           <span>👤 Login</span>
         </button>
-        <button class="btn-admin-header" onclick="openAdminLoginModal()" title="Secure Admin Panel">
+        <button class="btn-admin-header desktop-only-btn" onclick="openAdminLoginModal()" title="Secure Admin Panel">
           <span>🔐 Admin</span>
         </button>
       </div>
     </div>
   </header>
+
+  <!-- Left Side Mobile & Tablet Slide-Out Navigation Drawer -->
+  <div class="mobile-menu-backdrop" id="mobileMenuBackdrop" onclick="toggleMobileMenu()"></div>
+  <aside class="mobile-menu-drawer" id="mobileMenuDrawer" aria-label="Mobile Navigation">
+    <div class="mobile-menu-header">
+      <div class="logo-title-row">
+        <div class="logo-icon" style="width:32px; height:32px;">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+          </svg>
+        </div>
+        <span class="logo-title-medico" style="font-size:1.15rem;">MEDICO</span>
+        <span class="logo-badge-ai">AI</span>
+      </div>
+      <button class="btn-close-menu" onclick="toggleMobileMenu()" aria-label="Close Menu">✕</button>
+    </div>
+
+    <!-- User Profile Banner inside Drawer -->
+    <div class="mobile-user-strip" id="mobileUserStrip" onclick="openAuthModal(); toggleMobileMenu();">
+      <div class="mobile-user-avatar">👤</div>
+      <div class="mobile-user-info">
+        <strong id="mobileUserName">Sachin</strong>
+        <span id="mobileUserPhone">+91 9376199601</span>
+      </div>
+      <span class="mobile-user-arrow">›</span>
+    </div>
+
+    <!-- Full Navigation Links in Mobile Menu -->
+    <div class="mobile-menu-items">
+      <a href="#home" class="mobile-menu-link active" onclick="mobileNavigate('home')">
+        <span class="menu-link-icon">🏠</span>
+        <span class="menu-link-label">Home</span>
+      </a>
+      <a href="#medicines" class="mobile-menu-link" onclick="mobileNavigate('medicines')">
+        <span class="menu-link-icon">💊</span>
+        <span class="menu-link-label">Medicines & Generics</span>
+      </a>
+      <a href="#rx" class="mobile-menu-link" onclick="mobileNavigate('rx')">
+        <span class="menu-link-icon">📄</span>
+        <span class="menu-link-label">Prescription Scanner (OCR)</span>
+        <span class="menu-badge-green">AI Active</span>
+      </a>
+      <a href="#drbot" class="mobile-menu-link" onclick="mobileNavigate('drbot')">
+        <span class="menu-link-icon">🩺</span>
+        <span class="menu-link-label">Dr. Bot (AI Guide)</span>
+        <span class="menu-badge-blue">24/7 Live</span>
+      </a>
+      <a href="#dashboard" class="mobile-menu-link" onclick="mobileNavigate('dashboard')">
+        <span class="menu-link-icon">📊</span>
+        <span class="menu-link-label">My Dashboard & Orders</span>
+      </a>
+      <a href="#cart" class="mobile-menu-link" onclick="toggleCartDrawer(); toggleMobileMenu();">
+        <span class="menu-link-icon">🛒</span>
+        <span class="menu-link-label">My Cart</span>
+        <span class="menu-badge-teal" id="mobileMenuCartBadge">0 items</span>
+      </a>
+      <a href="#admin" class="mobile-menu-link" onclick="openAdminLoginModal(); toggleMobileMenu();">
+        <span class="menu-link-icon">🔐</span>
+        <span class="menu-link-label">Admin Command Center</span>
+        <span class="menu-badge-amber">Staff</span>
+      </a>
+    </div>
+
+    <div class="mobile-menu-footer">
+      <div class="mobile-footer-tag">✓ Certified Jan Aushadhi Generics</div>
+      <p style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">Save up to 75% on daily essential medicines • 100% Free COD</p>
+    </div>
+  </aside>
   <div id="storeFrontView">
 
   <!-- Main Container -->

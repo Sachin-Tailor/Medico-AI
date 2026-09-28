@@ -342,11 +342,61 @@ function searchHint(q) {
 }
 
 // -------------------------------------------------------------
+// MOBILE & TABLET NAVIGATION DRAWER
+// -------------------------------------------------------------
+function toggleMobileMenu() {
+  const drawer = document.getElementById("mobileMenuDrawer");
+  const backdrop = document.getElementById("mobileMenuBackdrop");
+  if (drawer && backdrop) {
+    const isOpen = drawer.classList.toggle("open");
+    backdrop.classList.toggle("open", isOpen);
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }
+}
+
+function mobileNavigate(target) {
+  toggleMobileMenu();
+  setTimeout(() => {
+    if (target === "home") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (target === "medicines") {
+      const el = document.getElementById("medicinesSection");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    } else if (target === "rx") {
+      const el = document.getElementById("rxScannerSection");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    } else if (target === "drbot") {
+      openDrBot();
+    } else if (target === "dashboard") {
+      const el = document.getElementById("dashboardSection");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, 220);
+}
+
+// -------------------------------------------------------------
 // USER AUTHENTICATION & PROFILE
 // -------------------------------------------------------------
 function updateAuthHeaderUI() {
   const user = db.getCurrentUser();
   const authBtn = document.getElementById("headerAuthBtn");
+  const mobileUserName = document.getElementById("mobileUserName");
+  const mobileUserPhone = document.getElementById("mobileUserPhone");
+
+  if (mobileUserName && mobileUserPhone) {
+    if (user) {
+      mobileUserName.textContent = user.name;
+      mobileUserPhone.textContent = user.phone ? `+91 ${user.phone.replace("+91", "").trim()}` : "Active User";
+    } else {
+      mobileUserName.textContent = "Guest User";
+      mobileUserPhone.textContent = "Tap to Login / Sign Up";
+    }
+  }
+
   if (!authBtn) return;
 
   if (user) {
@@ -879,6 +929,8 @@ function updateCartUI() {
 
   const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   if (countBadge) countBadge.textContent = totalCount;
+  const mobileCartBadge = document.getElementById("mobileMenuCartBadge");
+  if (mobileCartBadge) mobileCartBadge.textContent = `${totalCount} item${totalCount === 1 ? '' : 's'}`;
 
   if (itemsContainer) {
     if (cart.length === 0) {

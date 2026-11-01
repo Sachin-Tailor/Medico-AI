@@ -2156,6 +2156,39 @@ body {
   color: #92400e;
 }
 
+.bot-badge-google {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  margin-bottom: 8px;
+}
+
+.bot-direct-answer {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: #1e293b;
+}
+
+.bot-direct-answer p {
+  margin-bottom: 6px;
+}
+
+.bot-direct-answer p:last-child {
+  margin-bottom: 0;
+}
+
+
 /* ============================================================
    LEFT SIDE SLIDE-OUT MOBILE & TABLET NAVIGATION DRAWER
    ============================================================ */

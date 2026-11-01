@@ -1076,83 +1076,158 @@ function sendBotMessage() {
   typingIndicator.innerHTML = `
     <span style="display: flex; align-items: center; gap: 8px;">
       <span class="pulse-dot" style="display: inline-block;"></span>
-      <strong>Dr. Bot AI:</strong> Analyzing symptoms via Google & Medical Knowledge Base...
+      <strong>Dr. Bot AI:</strong> Google & Medical Knowledge Base se jankari nikal rahe hain...
     </span>
   `;
   messagesContainer.appendChild(typingIndicator);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-  setTimeout(() => {
-    messagesContainer.removeChild(typingIndicator);
-    const result = drBot.processQuery(query);
+  // Execute processing
+  setTimeout(async () => {
+    try {
+      const result = await Promise.resolve(drBot.processQuery(query));
+      if (messagesContainer.contains(typingIndicator)) {
+        messagesContainer.removeChild(typingIndicator);
+      }
 
-    const botBubble = document.createElement("div");
-    botBubble.className = "bot-msg";
+      const botBubble = document.createElement("div");
+      botBubble.className = "bot-msg";
 
-    botBubble.innerHTML = `
-      <div class="bot-analysis-banner">
-        <strong>🔍 Google Clinical & Diagnostic Analysis:</strong><br>
-        ${result.clinicalAnalysis}
-      </div>
-
-      <p style="font-weight: 800; color: #047857; margin-bottom: 6px; font-size: 0.95rem;">🩺 ${result.condition}</p>
-      <p style="margin-bottom: 8px;">${result.summary}</p>
-
-      <div class="bot-schedule-card">
-        <strong style="font-size: 0.82rem; color: #065f46; display: block; margin-bottom: 6px;">📋 Dawaai Schedule & Timing Niyam:</strong>
-        ${result.schedule.map(s => `
-          <div class="bot-schedule-item">
-            <span class="timing-badge">⏰ ${s.timing}</span>
-            <span class="freq-badge">🔄 ${s.frequency}</span>
-            <div style="font-weight: 700; font-size: 0.85rem; color: #0f172a; margin-top: 2px;">${s.medicine}</div>
-            <div style="font-size: 0.78rem; color: #475569;">${s.purpose}</div>
+      if (result.type === "chat") {
+        // Direct polite conversational response (e.g. Hi, Hello, Thanks)
+        botBubble.innerHTML = `
+          <div style="font-size: 0.88rem; line-height: 1.6; color: #1e293b;">
+            ${result.text}
           </div>
-        `).join("")}
-      </div>
-
-      <div style="margin-top: 10px; font-size: 0.8rem; color: #334155; line-height: 1.4;">
-        ${result.advice.map(a => `<p style="margin-bottom: 4px;">${a}</p>`).join("")}
-      </div>
-
-      ${result.homeCare ? `
-        <div class="bot-homecare-box">
-          <strong>🍵 Gharelu Nuskhe & Parhez (Home Care):</strong><br>
-          ${result.homeCare}
-        </div>
-      ` : ""}
-
-      ${result.recommendedMedIds && result.recommendedMedIds.length > 0 ? `
-        <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #cbd5e1;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Direct Generic Equivalents:</span>
-            ${result.isPrescriptionGuide ? `
-              <button class="btn-primary" style="padding: 4px 12px; font-size: 0.76rem;" onclick="addAllRxToCart()">
-                🛒 Add All to Cart
-              </button>
-            ` : ""}
+        `;
+      } else if (result.type === "direct_answer") {
+        // Direct focused answer (Normal BP, Sugar ranges, Health standards, Google search extracts)
+        botBubble.innerHTML = `
+          <div class="bot-badge-google">
+            <span>🔍 Google Medical Verified</span>
           </div>
-          ${result.recommendedMedIds.map(medId => {
-            const med = MEDICINES_DATA.find(m => m.id === medId);
-            if (!med) return "";
-            return `
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                <div>
-                  <span style="font-size: 0.82rem; font-weight: 700; display: block;">${med.name}</span>
-                  <small style="color: #10b981; font-weight: 700;">Generic ₹${med.genericPrice} (Save ${med.savingsPercent}%)</small>
+          ${result.title ? `<p style="font-weight: 800; color: #047857; margin-bottom: 6px; font-size: 0.92rem;">${result.title}</p>` : ""}
+          <div class="bot-direct-answer">
+            ${result.htmlContent}
+          </div>
+          ${result.recommendedMedIds && result.recommendedMedIds.length > 0 ? renderBotMeds(result.recommendedMedIds) : ""}
+        `;
+      } else if (result.type === "medicine_guide") {
+        // Targeted medicine answer (exact timing, dosage, precautions)
+        botBubble.innerHTML = `
+          <div class="bot-badge-google">
+            <span>🔍 Google Clinical Medicine Guide</span>
+          </div>
+          <p style="font-weight: 800; color: #047857; margin-bottom: 4px; font-size: 0.95rem;">
+            💊 ${result.medicineName}
+          </p>
+          <div style="font-size: 0.85rem; color: #334155; margin-bottom: 8px; line-height: 1.5;">
+            ${result.explanation}
+          </div>
+
+          <div class="bot-schedule-card">
+            <strong style="font-size: 0.82rem; color: #065f46; display: block; margin-bottom: 6px;">📋 Sahi Lene Ka Niyam (Timing & Protocol):</strong>
+            <div class="bot-schedule-item">
+              <span class="timing-badge">⏰ ${result.timing}</span>
+              <span class="freq-badge">🔄 ${result.frequency}</span>
+              <div style="font-weight: 700; font-size: 0.85rem; color: #0f172a; margin-top: 4px;">${result.dosage}</div>
+              <div style="font-size: 0.78rem; color: #475569;">${result.purpose}</div>
+            </div>
+          </div>
+
+          ${result.precautions ? `
+            <div style="margin-top: 8px; font-size: 0.8rem; color: #92400e; background: #fffbeb; padding: 6px 10px; border-radius: 6px; border: 1px solid #fef3c7;">
+              <strong>⚠️ Zaroori Savdhani:</strong> ${result.precautions}
+            </div>
+          ` : ""}
+
+          ${result.recommendedMedIds && result.recommendedMedIds.length > 0 ? renderBotMeds(result.recommendedMedIds) : ""}
+        `;
+      } else {
+        // Comprehensive Disease Clinical Protocol or Prescription
+        botBubble.innerHTML = `
+          <div class="bot-analysis-banner">
+            <strong>🔍 Google Clinical & Diagnostic Analysis:</strong><br>
+            ${result.clinicalAnalysis}
+          </div>
+
+          <p style="font-weight: 800; color: #047857; margin-bottom: 6px; font-size: 0.95rem;">🩺 ${result.condition}</p>
+          <p style="margin-bottom: 8px; font-size: 0.85rem;">${result.summary}</p>
+
+          ${result.schedule && result.schedule.length > 0 ? `
+            <div class="bot-schedule-card">
+              <strong style="font-size: 0.82rem; color: #065f46; display: block; margin-bottom: 6px;">📋 Dawaai Schedule & Timing Niyam:</strong>
+              ${result.schedule.map(s => `
+                <div class="bot-schedule-item">
+                  <span class="timing-badge">⏰ ${s.timing}</span>
+                  <span class="freq-badge">🔄 ${s.frequency}</span>
+                  <div style="font-weight: 700; font-size: 0.85rem; color: #0f172a; margin-top: 2px;">${s.medicine}</div>
+                  <div style="font-size: 0.78rem; color: #475569;">${s.purpose}</div>
                 </div>
-                <button class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="db.addToCart('${med.id}')">
-                  Add to Cart
-                </button>
-              </div>
-            `;
-          }).join("")}
-        </div>
-      ` : ""}
-    `;
+              `).join("")}
+            </div>
+          ` : ""}
 
-    messagesContainer.appendChild(botBubble);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }, 750);
+          ${result.advice && result.advice.length > 0 ? `
+            <div style="margin-top: 10px; font-size: 0.8rem; color: #334155; line-height: 1.4;">
+              ${result.advice.map(a => `<p style="margin-bottom: 4px;">${a}</p>`).join("")}
+            </div>
+          ` : ""}
+
+          ${result.homeCare ? `
+            <div class="bot-homecare-box">
+              <strong>🍵 Gharelu Nuskhe & Parhez (Home Care):</strong><br>
+              ${result.homeCare}
+            </div>
+          ` : ""}
+
+          ${result.recommendedMedIds && result.recommendedMedIds.length > 0 ? renderBotMeds(result.recommendedMedIds, result.isPrescriptionGuide) : ""}
+        `;
+      }
+
+      messagesContainer.appendChild(botBubble);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    } catch (err) {
+      console.error("Dr. Bot error:", err);
+      if (messagesContainer.contains(typingIndicator)) {
+        messagesContainer.removeChild(typingIndicator);
+      }
+      const errBubble = document.createElement("div");
+      errBubble.className = "bot-msg";
+      errBubble.innerHTML = `<p>Maaf kijiye, Dr. Bot response generate nahi kar paya. Kripya punah koshish karein.</p>`;
+      messagesContainer.appendChild(errBubble);
+    }
+  }, 450);
+}
+
+function renderBotMeds(medIds, isPrescriptionGuide = false) {
+  if (!medIds || medIds.length === 0) return "";
+  const validMeds = medIds.map(id => MEDICINES_DATA.find(m => m.id === id)).filter(Boolean);
+  if (validMeds.length === 0) return "";
+
+  return `
+    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Direct Jan Aushadhi Generic Equivalents:</span>
+        ${isPrescriptionGuide ? `
+          <button class="btn-primary" style="padding: 4px 12px; font-size: 0.76rem;" onclick="addAllRxToCart()">
+            🛒 Add All to Cart
+          </button>
+        ` : ""}
+      </div>
+      ${validMeds.map(med => `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px; background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+          <div>
+            <span style="font-size: 0.82rem; font-weight: 700; display: block;">${med.name}</span>
+            <small style="color: #10b981; font-weight: 700;">Generic ₹${med.genericPrice} (Save ${med.savingsPercent}%)</small>
+          </div>
+          <button class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="db.addToCart('${med.id}')">
+            Add to Cart
+          </button>
+        </div>
+      `).join("")}
+    </div>
+  `;
 }
 
 // -------------------------------------------------------------

@@ -715,6 +715,21 @@ function showActivePreviewView() {
   if (previewCard) previewCard.style.display = "block";
 }
 
+function toggleRxImageZoom(imgEl) {
+  if (!imgEl) return;
+  const isZoomed = imgEl.dataset.zoomed === "true";
+  if (isZoomed) {
+    imgEl.style.transform = "scale(1)";
+    imgEl.style.cursor = "zoom-in";
+    imgEl.dataset.zoomed = "false";
+  } else {
+    imgEl.style.transform = "scale(1.75)";
+    imgEl.style.transformOrigin = "center top";
+    imgEl.style.cursor = "zoom-out";
+    imgEl.dataset.zoomed = "true";
+  }
+}
+
 function renderActivePrescriptionPreview(activeRx) {
   const dropzone = document.getElementById("rxUploadDropzone");
   const previewCard = document.getElementById("rxImagePreviewCard");
@@ -727,12 +742,14 @@ function renderActivePrescriptionPreview(activeRx) {
 
   if (activeRx.imageSrc) {
     displayWrapper.innerHTML = `
-      <div class="rx-uploaded-img-wrapper">
-        <img src="${activeRx.imageSrc}" class="rx-uploaded-img" alt="Uploaded Prescription Image">
+      <div class="rx-uploaded-img-wrapper" style="overflow: auto; max-height: 360px;">
+        <img src="${activeRx.imageSrc}" class="rx-uploaded-img" alt="Uploaded Prescription Image"
+             title="Click to Zoom In / Out" style="cursor: zoom-in; transition: transform 0.25s ease;"
+             onclick="toggleRxImageZoom(this)">
       </div>
       <div style="margin-top: 8px; font-size: 0.8rem; color: #334155; display: flex; justify-content: space-between; align-items: center;">
         <span><strong>📄 Scanned Rx:</strong> ${activeRx.fileName || "Prescription Photo"}</span>
-        <span style="color: #059669; font-weight: 700;">✓ Digitized</span>
+        <span style="color: #059669; font-weight: 700;">🔍 Click image to zoom</span>
       </div>
     `;
   } else {
@@ -966,6 +983,21 @@ async function enrichUnknownRxMedicines(lines, alreadyMatchedNames) {
   return enriched;
 }
 
+function levenshteinDistance(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
 function parsePrescriptionOCRText(ocrText, fileName, dataUrl) {
   const cleanText = (ocrText || "").trim();
   const lines = cleanText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -1031,13 +1063,26 @@ function parsePrescriptionOCRText(ocrText, fileName, dataUrl) {
     const medObj = MEDICINES_DATA.find(m => m.id === entry.id);
     if (!medObj) continue;
 
-    const matchingLine = lines.find(line => {
+    // 1. Exact alias match on line
+    let matchingLine = lines.find(line => {
       const lowLine = line.toLowerCase();
       return entry.aliases.some(alias => {
         const esc = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         return new RegExp(`(^|\\s|[^a-z0-9])${esc}($|\\s|[^a-z0-9])`, "i").test(lowLine);
       });
     });
+
+    // 2. Fuzzy handwriting match (handles 1-2 OCR char errors in doctor handwriting)
+    if (!matchingLine) {
+      matchingLine = lines.find(line => {
+        const tokens = line.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(t => t.length >= 4);
+        return tokens.some(tok => entry.aliases.some(alias => {
+          if (alias.length < 4 || Math.abs(tok.length - alias.length) > 2) return false;
+          const maxDist = alias.length >= 7 ? 2 : 1;
+          return levenshteinDistance(tok, alias) <= maxDist;
+        }));
+      });
+    }
 
     if (matchingLine) {
       matchedIds.push(medObj.id);
@@ -1055,15 +1100,19 @@ function parsePrescriptionOCRText(ocrText, fileName, dataUrl) {
     }
   }
 
+  // Reject clearly non-medical / unwanted documents (ID cards, invoices, tickets, resumes, blank images)
+  const isUnwantedDoc = /\b(aadhaar|unique identification|income tax|permanent account|govt of india|gstin|subtotal|cgst|sgst|boarding pass|curriculum vitae|marksheet|university)\b/i.test(cleanText);
+
   // Validate whether this document is an actual Doctor / Clinic Prescription
   let rxSignals = 0;
   if (/\b(rx|℞)\b/i.test(cleanText)) rxSignals++;
-  if (/\b(dr\.?|doctor|mbbs|md|ms|clinic|hospital|nursing home|medical|reg\.?\s*no)\b/i.test(cleanText)) rxSignals++;
+  if (/\b(dr\.?|doctor|mbbs|md|ms|bams|bhms|clinic|hospital|nursing home|polyclinic|medical|reg\.?\s*no)\b/i.test(cleanText)) rxSignals++;
   if (/\b(tab|tablet|cap|capsule|syp|syrup|inj|injection|drops|ointment|mg|mcg|ml)\b/i.test(cleanText)) rxSignals++;
   if (/\b(od|bd|tds|qid|hs|sos|1-0-1|1-0-0|0-0-1|1-1-1|before food|after food)\b/i.test(cleanText)) rxSignals++;
-  if (/\b(patient|diagnosis|symptoms|advice|follow\s*up)\b/i.test(cleanText)) rxSignals++;
+  if (/\b(patient|diagnosis|symptoms|advice|follow\s*up|c\/o|o\/e)\b/i.test(cleanText)) rxSignals++;
 
-  const isValidPrescription = matchedIds.length >= 1 || rxSignals >= 2;
+  const hasEnoughText = cleanText.replace(/\s+/g, "").length >= 10;
+  const isValidPrescription = hasEnoughText && !isUnwantedDoc && (matchedIds.length >= 1 || rxSignals >= 2);
 
   const drLine = lines.find(l => /\bdr\.?\s+[a-z]/i.test(l));
   const doctorName = drLine ? drLine.slice(0, 48) : "Verified Clinic Prescription";

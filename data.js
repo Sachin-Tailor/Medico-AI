@@ -18,6 +18,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Amlodipine (5mg)",
     manufacturer: "Jan Aushadhi / Cipla Generics",
+    diseases: "High BP, Blood Pressure, Hypertension, Angina, Chest Pain",
     description: "Calcium channel blocker used to treat high blood pressure and angina (chest pain).",
     dosageInfo: {
       timing: "Subah nashte ke baad (Once daily, usually morning)",
@@ -42,6 +43,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Amoxicillin (500mg)",
     manufacturer: "Alkem Generics / Jan Aushadhi",
+    diseases: "Throat Infection, Gala Dard, Ear Infection, Kaan Dard, Dental Infection, Bacterial Infection",
     description: "Broad-spectrum penicillin antibiotic used to treat bacterial throat, ear, respiratory and skin infections.",
     dosageInfo: {
       timing: "Khane ke baad (After meals)",
@@ -66,6 +68,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Azithromycin (500mg)",
     manufacturer: "Mankind Generics / Pradhan Mantri Jan Aushadhi",
+    diseases: "Tonsillitis, Gale me Dard, Chest Infection, Typhoid, Khansi, Respiratory Infection",
     description: "Macrolide antibiotic used for respiratory tract infections, severe throat pain, tonsillitis and typhoid.",
     dosageInfo: {
       timing: "Khana khane se 1 ghanta pehle ya khane ke 2 ghante baad",
@@ -90,6 +93,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Paracetamol (650mg)",
     manufacturer: "Micro Generics / Jan Aushadhi",
+    diseases: "Fever, Bukhar, Dengue, Viral Fever, Headache, Sar Dard, Badan Dard, Body Pain",
     description: "Effective antipyretic (fever reducer) and analgesic for body ache, viral fever, headache, and muscle soreness.",
     dosageInfo: {
       timing: "Halka khana ya dudh/pani ke baad",
@@ -114,6 +118,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Metformin SR (500mg)",
     manufacturer: "USV Generics / Jan Aushadhi",
+    diseases: "Diabetes, Sugar, High Blood Sugar, Madhumeh, PCOS, Type 2 Diabetes",
     description: "First-line oral blood glucose lowering medicine for Type-2 Diabetes management.",
     dosageInfo: {
       timing: "Khane ke beech me ya khane ke turant baad (To avoid stomach upset)",
@@ -138,6 +143,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Pantoprazole (40mg) + Domperidone (30mg)",
     manufacturer: "Alkem / Jan Aushadhi",
+    diseases: "Acidity, Gas, Heartburn, Seene me Jalan, Khatti Dakar, GERD, Pet Dard, Vomiting",
     description: "Cures severe acid reflux, heartburn, sour burps, and nausea or vomiting sensation.",
     dosageInfo: {
       timing: "Subah khali pet (30 minutes before breakfast)",
@@ -162,6 +168,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Montelukast (10mg) + Levocetirizine (5mg)",
     manufacturer: "Cipla / Jan Aushadhi",
+    diseases: "Cold, Sardi, Chheenk, Allergic Cough, Khansi, Asthma, Allergic Rhinitis",
     description: "Fast relief from runny nose, sneezing, allergic rhinitis, watery eyes, and allergic cough/asthma symptoms.",
     dosageInfo: {
       timing: "Raat ko sone se pehle (Before bedtime)",
@@ -186,6 +193,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Telmisartan (40mg)",
     manufacturer: "Glenmark / Jan Aushadhi",
+    diseases: "High BP, Hypertension, Blood Pressure, Heart Protection",
     description: "Angiotensin receptor blocker (ARB) for arterial high blood pressure and cardiovascular protection.",
     dosageInfo: {
       timing: "Subah ek nishchit samay par",
@@ -210,6 +218,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Atorvastatin (10mg)",
     manufacturer: "Zydus / Jan Aushadhi",
+    diseases: "High Cholesterol, LDL, Triglycerides, Heart Attack Prevention",
     description: "Lowers bad LDL cholesterol and triglycerides in blood, reducing the risk of heart attack and stroke.",
     dosageInfo: {
       timing: "Raat ko khane ke baad (Cholesterol synthesis happens mostly at night)",
@@ -234,6 +243,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Aceclofenac (100mg) + Paracetamol (325mg)",
     manufacturer: "Ipca / Jan Aushadhi",
+    diseases: "Joint Pain, Jodo ka Dard, Arthritis, Toothache, Dant Dard, Back Pain, Kamar Dard, Sprain, Moch",
     description: "Strong painkiller and anti-inflammatory medicine for joint pain, arthritis, dental pain, backache and sprains.",
     dosageInfo: {
       timing: "Hamesha khana khane ke baad (Never on empty stomach)",
@@ -258,6 +268,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Ciprofloxacin (500mg)",
     manufacturer: "Cipla Generics / Jan Aushadhi",
+    diseases: "UTI, Urine Infection, Peshab me Jalan, Loose Motion, Dast, Diarrhea, Typhoid",
     description: "Fluoroquinolone antibiotic for urinary tract infections (UTI), severe diarrhea, skin and bone infections.",
     dosageInfo: {
       timing: "Khane ke 1-2 ghante baad, khoob sara pani peeyein",
@@ -282,6 +293,7 @@ const MEDICINES_DATA = [
     inStock: true,
     composition: "Cetirizine (10mg)",
     manufacturer: "Dr. Reddy's / Jan Aushadhi",
+    diseases: "Skin Allergy, Itching, Khujli, Hives, Pitti, Daane, Seasonal Allergy",
     description: "Fast-acting antihistamine for itching, hives, insect bites, watery eyes and seasonal allergies.",
     dosageInfo: {
       timing: "Raat ko ya sham ko",

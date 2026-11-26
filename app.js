@@ -290,8 +290,17 @@ function setupEventListeners() {
   const searchInput = document.getElementById("mainSearchInput");
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
-      searchQuery = e.target.value.toLowerCase();
+      searchQuery = e.target.value.trim().toLowerCase();
       renderMedicines();
+    });
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        searchQuery = e.target.value.trim().toLowerCase();
+        renderMedicines();
+        const sec = document.getElementById("medicinesSection");
+        if (sec) sec.scrollIntoView({ behavior: "smooth" });
+      }
     });
   }
 
@@ -632,17 +641,31 @@ function renderMedicines() {
   if (allTabBtn) allTabBtn.textContent = `All Medicines (${MEDICINES_DATA.length})`;
   if (!container) return;
 
+  const searchTokens = searchQuery
+    ? searchQuery
+        .replace(/\b(ki|ke|ka|ko|se|me|mein|dawai|dawa|medicine|tablet|capsule|syrup|for|in)\b/gi, " ")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+    : [];
+
   const filtered = MEDICINES_DATA.filter(med => {
-    const matchesCategory = currentCategory === "All" || med.category === currentCategory;
-    const matchesSearch = !searchQuery ||
-      med.name.toLowerCase().includes(searchQuery) ||
-      med.genericName.toLowerCase().includes(searchQuery) ||
-      med.brandName.toLowerCase().includes(searchQuery) ||
-      med.categoryLabel.toLowerCase().includes(searchQuery) ||
-      med.composition.toLowerCase().includes(searchQuery) ||
-      (med.description && med.description.toLowerCase().includes(searchQuery)) ||
-      (med.diseases && med.diseases.toLowerCase().includes(searchQuery));
-    return matchesCategory && matchesSearch;
+    // When user actively searches, search across all categories so nothing is hidden
+    const matchesCategory = searchTokens.length > 0 || currentCategory === "All" || med.category === currentCategory;
+    if (!matchesCategory) return false;
+    if (searchTokens.length === 0) return true;
+
+    const searchableBlob = [
+      med.name,
+      med.genericName,
+      med.brandName,
+      med.categoryLabel,
+      med.composition,
+      med.description || "",
+      med.diseases || ""
+    ].join(" ").toLowerCase();
+
+    return searchTokens.every(tok => searchableBlob.includes(tok));
   });
 
   if (filtered.length === 0) {
@@ -1034,21 +1057,34 @@ function parsePrescriptionOCRText(ocrText, fileName, dataUrl) {
   const cleanText = (ocrText || "").trim();
   const lines = cleanText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-  // Comprehensive alias map for all catalog medicines + common OCR variants
-  const medAliases = [
-    { id: "med-4", aliases: ["dolo", "d0lo", "paracetamol", "paracetmol", "acetaminophen", "calpol", "crocin", "pacimol", "p-650", "650mg"] },
-    { id: "med-6", aliases: ["pan-d", "pan d", "pand", "pantoprazole", "pantop", "pantocid", "domperidone", "rabeprazole", "omeprazole"] },
-    { id: "med-3", aliases: ["azithromycin", "azithro", "azithral", "zithromax", "azee", "azi 500"] },
-    { id: "med-7", aliases: ["montair", "montek", "montelukast", "levocetirizine", "telekast", "montair-lc"] },
-    { id: "med-5", aliases: ["metformin", "glycomet", "glucophage", "metform"] },
-    { id: "med-8", aliases: ["telmisartan", "telma", "telmikind", "telsar"] },
-    { id: "med-1", aliases: ["amlodipine", "amlip", "norvasc", "stamlo", "amlo"] },
-    { id: "med-2", aliases: ["amoxicillin", "amox", "mox 500", "novamox", "amoxyclav"] },
-    { id: "med-9", aliases: ["atorvastatin", "atorva", "lipitor", "atorlip"] },
-    { id: "med-10", aliases: ["aceclofenac", "zerodol", "hifenac", "diclofenac", "combiflam"] },
-    { id: "med-11", aliases: ["ciprofloxacin", "ciplox", "cifran", "ciprobid"] },
-    { id: "med-12", aliases: ["cetirizine", "cetzine", "zyrtec", "okacet", "alerid"] }
-  ];
+  // Comprehensive alias map for top medicines + dynamic aliases for all 112+ catalog medicines
+  const baseAliases = {
+    "med-4": ["dolo", "d0lo", "paracetamol", "paracetmol", "acetaminophen", "calpol", "crocin", "pacimol", "p-650", "650mg"],
+    "med-6": ["pan-d", "pan d", "pand", "pantoprazole", "pantop", "pantocid", "domperidone"],
+    "med-3": ["azithromycin", "azithro", "azithral", "zithromax", "azee", "azi 500"],
+    "med-7": ["montair", "montek", "montelukast", "levocetirizine", "telekast", "montair-lc"],
+    "med-5": ["metformin", "glycomet", "glucophage", "metform"],
+    "med-8": ["telmisartan", "telma", "telmikind", "telsar"],
+    "med-1": ["amlodipine", "amlip", "norvasc", "stamlo", "amlo"],
+    "med-2": ["amoxicillin", "amox", "mox 500", "novamox"],
+    "med-9": ["atorvastatin", "atorva", "lipitor", "atorlip"],
+    "med-10": ["aceclofenac", "zerodol", "hifenac", "diclofenac"],
+    "med-11": ["ciprofloxacin", "ciplox", "cifran", "ciprobid"],
+    "med-12": ["cetirizine", "cetzine", "zyrtec", "okacet", "alerid"]
+  };
+
+  const medAliases = MEDICINES_DATA.map(m => {
+    const aliasSet = new Set(baseAliases[m.id] || []);
+    const primaryName = m.name.toLowerCase().split(" ")[0].replace(/[^a-z0-9\-]/g, "");
+    if (primaryName.length >= 3) aliasSet.add(primaryName);
+    m.brandName.split("/").forEach(b => {
+      const bClean = b.trim().toLowerCase().split(" ")[0].replace(/[^a-z0-9\-]/g, "");
+      if (bClean.length >= 3) aliasSet.add(bClean);
+      const bFull = b.trim().toLowerCase();
+      if (bFull.length >= 3) aliasSet.add(bFull);
+    });
+    return { id: m.id, aliases: Array.from(aliasSet) };
+  });
 
   const matchedIds = [];
   const itemsExplanation = [];

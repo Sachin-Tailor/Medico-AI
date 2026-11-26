@@ -889,13 +889,18 @@ class DrBotEngine {
         return med;
       }
     }
-    // 2. Check global MEDICINES_DATA
+    // 2. Check global MEDICINES_DATA (112+ medicines + all alternate brand names)
     if (typeof MEDICINES_DATA !== "undefined") {
-      const found = MEDICINES_DATA.find(m =>
-        this.hasKeyword(text, m.name.toLowerCase().split(" ")[0]) ||
-        this.hasKeyword(text, m.brandName.toLowerCase().split(" ")[0]) ||
-        this.hasKeyword(text, m.genericName.toLowerCase().split(" ")[0])
-      );
+      const found = MEDICINES_DATA.find(m => {
+        const primary = m.name.toLowerCase().split(" ")[0].replace(/[^a-z0-9\-]/g, "");
+        const genericPrimary = m.genericName.toLowerCase().split(" ")[0].replace(/[^a-z0-9\-]/g, "");
+        const brandAliases = m.brandName.split("/").map(b => b.trim().toLowerCase().split(" ")[0].replace(/[^a-z0-9\-]/g, ""));
+        return (
+          (primary.length >= 3 && this.hasKeyword(text, primary)) ||
+          (genericPrimary.length >= 4 && this.hasKeyword(text, genericPrimary)) ||
+          brandAliases.some(b => b.length >= 3 && this.hasKeyword(text, b))
+        );
+      });
       if (found) {
         return {
           names: [found.name.toLowerCase()],

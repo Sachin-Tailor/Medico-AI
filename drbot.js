@@ -323,6 +323,58 @@ class DrBotEngine {
         ],
         homeCare: "Adrak ki chai lein aur deep breathing (pranayam) karein.",
         recommendedMedIds: ["med-4"]
+      },
+      {
+        id: "stomach_pain",
+        keywords: ["pet dard", "pait dard", "stomach pain", "stomach ache", "abdominal pain", "pet me dard", "pet me marod", "cramps", "pet dukhna", "pet ainthna"],
+        condition: "Pet Dard aur Marod (Stomach Pain & Abdominal Cramps)",
+        analysis: "Pet dard aamtaur par gas, acidity, apach (indigestion), halka food infection ya pet me marod ki wajah se hota hai.",
+        schedule: [
+          {
+            medicine: "Meftal-Spas (Pet me marod ya ainthhan ke liye)",
+            dosage: "1 Tablet",
+            frequency: "SOS (Zarurat padne par, din me maximum 2 baar)",
+            timing: "Hamesha halka khana khane ke baad",
+            purpose: "Pet ki marod, ainthhan aur dard se turant aaram"
+          },
+          {
+            medicine: "Pan-D / Digene (Agar gas ya jalan ke sath dard ho)",
+            dosage: "1 Capsule / 2 Chammach Syrup",
+            frequency: "1-0-0 (Subah khali pet Pan-D) ya SOS Digene",
+            timing: "Khane se pehle (Pan-D) / Khane ke baad (Digene)",
+            purpose: "Gas aur acid ko shant karna"
+          }
+        ],
+        advice: [
+          "💧 Gunguna Paani: Thoda-thoda karke gunguna paani ya ORS piyein.",
+          "🍲 Halka Khana: Moong daal khichdi, dahi-chawal ya daliya khayein. Teekha, tala-bhuna aur doodh/chai abhi avoid karein.",
+          "🔥 Sek (Warm Compress): Pet par garm paani ki botal se halka sek karne se marod me jaldi aaram milta hai.",
+          "🚨 Doctor ko kab dikhayein: Agar pet me dard bohot tez ho, lagatar ulti aaye, bukhar ho ya dard 24 ghante se zyada rahe toh turant doctor ko dikhayein."
+        ],
+        homeCare: "Ajwain aur thoda kaala namak gungune paani ke sath lene se gas aur pet dard me turant aaram milta hai.",
+        recommendedMedIds: ["med-6"]
+      },
+      {
+        id: "weakness_fatigue",
+        keywords: ["kamzori", "weakness", "chakkar", "dizziness", "thakan", "fatigue", "energy low", "susti"],
+        condition: "Kamzori, Thakan aur Chakkar (Weakness & Fatigue)",
+        analysis: "Sharir me paani ki kami (dehydration), kamzor neend, khoon ki kami (anemia), ya Vitamin D/B12 ki kami se kamzori aur chakkar aa sakte hain.",
+        schedule: [
+          {
+            medicine: "ORS / Electral + Multivitamin (B-Complex / Vitamin D3)",
+            dosage: "1 Glass ORS / 1 Capsule",
+            frequency: "Din me 1-2 baar",
+            timing: "Multivitamin hamesha nashte ya khane ke baad lein",
+            purpose: "Electrolytes aur zaroori vitamins ki kami poori karna"
+          }
+        ],
+        advice: [
+          "💧 Hydration: 1 glass paani me ORS ya nimbu-namak-chini ghol kar piyein.",
+          "🥗 Poshak Aahar: Khajoor, kela, palak, daal, anda ya paneer apni diet me shamil karein.",
+          "🩸 Checkup: Agar kamzori lagatar bani rahe toh CBC (Hemoglobin), Vitamin B12, Vitamin D aur Sugar test zaroor karwayein."
+        ],
+        homeCare: "Gungune doodh me 2-3 khajoor ya chana-gud khane se sharir ko turant energy milti hai.",
+        recommendedMedIds: []
       }
     ];
   }
@@ -653,7 +705,7 @@ class DrBotEngine {
         text: `
           <strong>Hello! Main aapki kya madad kar sakta hoon? 🩺</strong><br>
           <span style="color: #475569; font-size: 0.84rem; display: block; margin-top: 4px;">
-            Main <strong>Dr. Bot AI</strong> hoon. Aap mujhse kisi bhi <strong>dawaai, bimari, lakshan, prescription</strong> ya <strong>koi bhi sawaal</strong> pooch sakte hain — main aapko Google aur Medical Knowledge Base se sahi jaankari dunga!
+            Main <strong>Dr. Bot</strong> hoon. Aap mujhse kisi bhi <strong>dawaai, bimari, lakshan, prescription</strong> ya <strong>koi bhi sawaal</strong> pooch sakte hain — main aapko aasan bhasha me turant sahi jaankari dunga!
           </span>
         `
       };
@@ -679,7 +731,7 @@ class DrBotEngine {
     if (this.isIdentity(cleanInput)) {
       return {
         type: "chat",
-        text: "Main <strong>Dr. Bot AI</strong> hoon — Medico AI ka Intelligent Assistant 🩺. Main aapke har medical, dawaai aur general sawaal ka jawab Google Web Search aur Clinical Knowledge Base se dhoondh kar deta hoon."
+        text: "Main <strong>Dr. Bot</strong> hoon — aapka AI Health & Medical Assistant 🩺. Aap mujhse kisi bhi bimari, dawaai ya general sawaal ke baare me pooch sakte hain."
       };
     }
 
@@ -909,11 +961,33 @@ class DrBotEngine {
       }
     }
 
-    return maxScore > 0 ? bestMatch : null;
+    if (maxScore > 0) return bestMatch;
+
+    // Smart co-occurring Hinglish symptom pair matching (e.g. "mera pet subhe se dard kar rha hai")
+    const hasPain = this.hasAnyKeyword(text, ["dard", "pain", "dukh", "dukhna", "ache", "marod", "ainthan", "ainthhan"]);
+    if (hasPain) {
+      if (this.hasAnyKeyword(text, ["pet", "pait", "stomach", "tummy", "nabhi"])) {
+        return this.conditionsKB.find(c => c.id === "stomach_pain") || null;
+      }
+      if (this.hasAnyKeyword(text, ["sar", "sir", "matha", "head"])) {
+        return this.conditionsKB.find(c => c.id === "fever") || null;
+      }
+      if (this.hasAnyKeyword(text, ["gala", "gale", "throat"])) {
+        return this.conditionsKB.find(c => c.id === "cold_cough") || null;
+      }
+      if (this.hasAnyKeyword(text, ["kamar", "ghutne", "ghutna", "jod", "jodo", "dant", "daant", "pair", "hath", "back", "knee", "tooth", "joint"])) {
+        return this.conditionsKB.find(c => c.id === "joint_pain") || null;
+      }
+      if (this.hasAnyKeyword(text, ["peshab", "urine"])) {
+        return this.conditionsKB.find(c => c.id === "uti") || null;
+      }
+    }
+
+    return null;
   }
 
   // -------------------------------------------------------------
-  // 5. LIVE GOOGLE & WEB KNOWLEDGE SEARCH INTEGRATION
+  // 5. LIVE BACKGROUND KNOWLEDGE SEARCH (SILENT & SIMPLE LANGUAGE)
   // -------------------------------------------------------------
   buildSearchQueries(rawInput, cleanInput) {
     let stripped = cleanInput
@@ -926,18 +1000,32 @@ class DrBotEngine {
       stripped = rawInput.replace(/[?!.,'"]+/g, " ").trim();
     }
 
-    // Translate common Hinglish medical & general terms to English for accurate web search
-    const hinglishMap = {
+    // Translate common Hinglish medical & general terms to English for accurate background search
+    const hinglishPhrases = {
       "sar dard": "headache",
       "sir dard": "headache",
       "pet dard": "abdominal pain",
+      "pait dard": "abdominal pain",
       "kamar dard": "back pain",
       "ghutne dard": "knee pain",
       "dant dard": "toothache",
+      "daant dard": "toothache",
+      "gale me kharash": "sore throat",
+      "seene me jalan": "heartburn",
+      "pet me gas": "flatulence",
+      "high bp": "hypertension",
+      "sugar level": "blood sugar"
+    };
+
+    const hinglishWords = {
+      "pet": "stomach",
+      "pait": "stomach",
+      "dard": "pain",
       "bukhar": "fever",
       "khansi": "cough",
       "sardi": "common cold",
-      "gale me kharash": "sore throat",
+      "gala": "throat",
+      "gale": "throat",
       "kami": "deficiency",
       "lakshan": "symptoms",
       "ilaj": "treatment",
@@ -948,6 +1036,7 @@ class DrBotEngine {
       "dawai": "medicine",
       "dawa": "medicine",
       "chakkar": "dizziness",
+      "kamzori": "weakness",
       "neend": "sleep",
       "thakan": "fatigue",
       "sujan": "inflammation",
@@ -973,12 +1062,17 @@ class DrBotEngine {
     };
 
     let englishQuery = stripped;
-    for (const [hi, en] of Object.entries(hinglishMap)) {
+    for (const [hi, en] of Object.entries(hinglishPhrases)) {
       const rx = new RegExp(`(^|\\s)${hi}(\\s|$)`, "gi");
       englishQuery = englishQuery.replace(rx, `$1${en}$2`);
     }
+    for (const [hi, en] of Object.entries(hinglishWords)) {
+      const rx = new RegExp(`(^|\\s)${hi}(\\s|$)`, "gi");
+      englishQuery = englishQuery.replace(rx, `$1${en}$2`);
+    }
+
     englishQuery = englishQuery
-      .replace(/\b(ki|ke|ka|ko|se|me|mein|par|aur|ya|kyu|kyon|hota|hoti|hai|hain|kya|kaise|kitna|kitni|chahiye)\b/gi, " ")
+      .replace(/\b(mera|mere|meri|mujhe|mujhko|aaj|kal|subah|subhe|raat|sham|din|kar|karu|karun|kare|karen|rha|rhi|raha|rahi|rahe|ho|h|hu|hoon|tha|thi|the|bhai|yaar|sir|doctor|ki|ke|ka|ko|se|me|mein|par|aur|ya|kyu|kyon|hota|hoti|hai|hain|kya|kaise|kitna|kitni|chahiye)\b/gi, " ")
       .replace(/\s+/g, " ")
       .trim();
 
@@ -1014,7 +1108,7 @@ class DrBotEngine {
       if (!hits || hits.length === 0) return null;
 
       const topHit = hits[0];
-      const extractUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&exsentences=5&pageids=${topHit.pageid}&format=json&origin=*`;
+      const extractUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&exsentences=4&pageids=${topHit.pageid}&format=json&origin=*`;
       const extractRes = await this.fetchWithTimeout(extractUrl, 4000);
 
       let extractText = "";
@@ -1030,12 +1124,7 @@ class DrBotEngine {
 
       return {
         title: topHit.title,
-        extract: extractText,
-        url: `https://${lang}.wikipedia.org/?curid=${topHit.pageid}`,
-        related: hits.slice(1).map(h => ({
-          title: h.title,
-          snippet: h.snippet.replace(/<[^>]+>/g, "")
-        }))
+        extract: extractText
       };
     } catch (e) {
       return null;
@@ -1059,15 +1148,15 @@ class DrBotEngine {
       const result = data?.results?.[0];
       if (!result) return null;
 
-      const trimText = (arr, maxLen = 320) => {
+      const trimText = (arr, maxLen = 280) => {
         if (!arr || !arr[0]) return "";
         const clean = arr[0].replace(/\s+/g, " ").trim();
         return clean.length > maxLen ? clean.slice(0, maxLen).trim() + "..." : clean;
       };
 
       const indications = trimText(result.indications_and_usage);
-      const dosage = trimText(result.dosage_and_administration, 240);
-      const warnings = trimText(result.warnings || result.adverse_reactions, 240);
+      const dosage = trimText(result.dosage_and_administration, 220);
+      const warnings = trimText(result.warnings || result.adverse_reactions, 220);
 
       if (!indications && !dosage) return null;
 
@@ -1093,9 +1182,7 @@ class DrBotEngine {
       if (!text || text.length < 10) return null;
       return {
         heading: data.Heading || query,
-        text,
-        source: data.AbstractSource || "Web Knowledge",
-        url: data.AbstractURL || ""
+        text
       };
     } catch (e) {
       return null;
@@ -1104,7 +1191,6 @@ class DrBotEngine {
 
   async performLiveGoogleSearch(rawInput, cleanInput) {
     const queries = this.buildSearchQueries(rawInput, cleanInput);
-    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(rawInput)}`;
 
     const [wikiEn, wikiHi, fdaData, ddgData] = await Promise.all([
       this.searchWikipedia(queries.primary, "en"),
@@ -1113,7 +1199,6 @@ class DrBotEngine {
       this.searchDuckDuckGo(queries.primary)
     ]);
 
-    // If primary translated query missed on English Wiki, try original stripped query
     let wikiResult = wikiHi || wikiEn;
     if (!wikiResult && queries.original !== queries.primary) {
       wikiResult = await this.searchWikipedia(queries.original, "en");
@@ -1123,14 +1208,12 @@ class DrBotEngine {
       return null;
     }
 
-    const safeInput = this.escapeHtml(rawInput);
     let htmlParts = [];
 
     if (ddgData) {
       htmlParts.push(`
         <div style="background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 8px;">
-          <strong style="color: #0f172a; font-size: 0.88rem; display: block; margin-bottom: 4px;">${this.escapeHtml(ddgData.heading)}</strong>
-          <p style="font-size: 0.85rem; line-height: 1.55; color: #334155; margin: 0;">${this.escapeHtml(ddgData.text)}</p>
+          <p style="font-size: 0.86rem; line-height: 1.55; color: #1e293b; margin: 0;">${this.escapeHtml(ddgData.text)}</p>
         </div>
       `);
     }
@@ -1139,39 +1222,28 @@ class DrBotEngine {
       htmlParts.push(`
         <div style="background: #f0fdf4; padding: 10px 12px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 8px;">
           <strong style="color: #065f46; font-size: 0.86rem; display: block; margin-bottom: 4px;">
-            💊 Official Clinical Drug Info: ${this.escapeHtml(fdaData.brand)} ${fdaData.generic ? `(${this.escapeHtml(fdaData.generic)})` : ""}
+            💊 ${this.escapeHtml(fdaData.brand)} ${fdaData.generic ? `(${this.escapeHtml(fdaData.generic)})` : ""}
           </strong>
-          ${fdaData.indications ? `<p style="font-size: 0.82rem; color: #1e293b; margin: 4px 0;"><strong>Uses:</strong> ${this.escapeHtml(fdaData.indications)}</p>` : ""}
+          ${fdaData.indications ? `<p style="font-size: 0.82rem; color: #1e293b; margin: 4px 0;"><strong>Kis kaam aati hai:</strong> ${this.escapeHtml(fdaData.indications)}</p>` : ""}
           ${fdaData.dosage ? `<p style="font-size: 0.82rem; color: #1e293b; margin: 4px 0;"><strong>Dosage:</strong> ${this.escapeHtml(fdaData.dosage)}</p>` : ""}
-          ${fdaData.warnings ? `<p style="font-size: 0.8rem; color: #92400e; margin: 4px 0;"><strong>⚠️ Warnings:</strong> ${this.escapeHtml(fdaData.warnings)}</p>` : ""}
+          ${fdaData.warnings ? `<p style="font-size: 0.8rem; color: #92400e; margin: 4px 0;"><strong>⚠️ Savdhani:</strong> ${this.escapeHtml(fdaData.warnings)}</p>` : ""}
         </div>
       `);
     }
 
     if (wikiResult && (!ddgData || wikiResult.title.toLowerCase() !== ddgData.heading.toLowerCase())) {
       htmlParts.push(`
-        <div style="background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 8px;">
-          <strong style="color: #047857; font-size: 0.88rem; display: block; margin-bottom: 4px;">📖 ${this.escapeHtml(wikiResult.title)}</strong>
-          <p style="font-size: 0.85rem; line-height: 1.55; color: #334155; margin: 0;">${this.escapeHtml(wikiResult.extract)}</p>
+        <div style="background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 6px;">
+          <p style="font-size: 0.86rem; line-height: 1.55; color: #1e293b; margin: 0;">${this.escapeHtml(wikiResult.extract)}</p>
         </div>
       `);
     }
 
-    const titleText = ddgData?.heading || fdaData?.brand || wikiResult?.title || safeInput;
-
-    htmlParts.push(`
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
-        <span style="font-size: 0.76rem; color: #64748b;">🔍 Source: Google Web & Medical Knowledge</span>
-        <a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer"
-           style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700; color: #059669; text-decoration: none; background: #ecfdf5; padding: 4px 10px; border-radius: 999px; border: 1px solid #a7f3d0;">
-          🔎 Google par poora result dekhein →
-        </a>
-      </div>
-    `);
+    const titleText = ddgData?.heading || fdaData?.brand || wikiResult?.title || this.escapeHtml(rawInput);
 
     return {
       type: "direct_answer",
-      title: `Google Answer: ${this.escapeHtml(titleText)}`,
+      title: `${this.escapeHtml(titleText)}`,
       htmlContent: htmlParts.join(""),
       recommendedMedIds: []
     };
@@ -1179,24 +1251,13 @@ class DrBotEngine {
 
   generateSmartFallback(rawInput) {
     const safeInput = this.escapeHtml(rawInput);
-    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(rawInput)}`;
 
     return {
-      type: "direct_answer",
-      title: "Google Search Assistant",
-      htmlContent: `
-        <p style="margin-bottom: 8px; font-size: 0.86rem; color: #334155;">
-          Aapne poochha: <strong>"${safeInput}"</strong>
-        </p>
-        <p style="margin-bottom: 10px; font-size: 0.84rem; color: #475569; line-height: 1.5;">
-          Abhi live web snippet load nahi ho paya (network ya specific query ki wajah se). Aap seedhe Google par iska exact answer dekh sakte hain:
-        </p>
-        <a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer"
-           style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: #ffffff; background: #059669; padding: 7px 14px; border-radius: 8px; text-decoration: none;">
-          🔎 Google par "${safeInput}" Search Karein →
-        </a>
-      `,
-      recommendedMedIds: []
+      type: "chat",
+      text: `
+        Main aapke sawaal (<strong>"${safeInput}"</strong>) ko samajh raha hoon. 🩺<br><br>
+        Aap thoda aur clear likh sakte hain — jaise kis <strong>bimari, lakshan (bukhar, pet dard, sir dard, gas)</strong> ya kis <strong>dawaai ke naam</strong> ke baare me jaanna hai? Main turant aapko sahi aur aasan jawab dunga!
+      `
     };
   }
 

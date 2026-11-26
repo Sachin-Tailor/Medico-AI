@@ -1070,13 +1070,13 @@ function sendBotMessage() {
   input.value = "";
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-  // Bot Thinking / Google Clinical Analysis Indicator
+  // Bot Thinking Indicator
   const typingIndicator = document.createElement("div");
   typingIndicator.className = "bot-msg";
   typingIndicator.innerHTML = `
     <span style="display: flex; align-items: center; gap: 8px;">
       <span class="pulse-dot" style="display: inline-block;"></span>
-      <strong>Dr. Bot AI:</strong> Google & Medical Knowledge Base se jankari nikal rahe hain...
+      <strong>Dr. Bot:</strong> Aapke sawaal ka jawab taiyar kar rahe hain...
     </span>
   `;
   messagesContainer.appendChild(typingIndicator);
@@ -1101,10 +1101,10 @@ function sendBotMessage() {
           </div>
         `;
       } else if (result.type === "direct_answer") {
-        // Direct focused answer (Normal BP, Sugar ranges, Health standards, Google search extracts)
+        // Direct focused answer
         botBubble.innerHTML = `
           <div class="bot-badge-google">
-            <span>🔍 Google Medical Verified</span>
+            <span>🩺 Dr. Bot Verified Answer</span>
           </div>
           ${result.title ? `<p style="font-weight: 800; color: #047857; margin-bottom: 6px; font-size: 0.92rem;">${result.title}</p>` : ""}
           <div class="bot-direct-answer">
@@ -1116,7 +1116,7 @@ function sendBotMessage() {
         // Targeted medicine answer (exact timing, dosage, precautions)
         botBubble.innerHTML = `
           <div class="bot-badge-google">
-            <span>🔍 Google Clinical Medicine Guide</span>
+            <span>💊 Dr. Bot Medicine Guide</span>
           </div>
           <p style="font-weight: 800; color: #047857; margin-bottom: 4px; font-size: 0.95rem;">
             💊 ${result.medicineName}
@@ -1147,7 +1147,7 @@ function sendBotMessage() {
         // Comprehensive Disease Clinical Protocol or Prescription
         botBubble.innerHTML = `
           <div class="bot-analysis-banner">
-            <strong>🔍 Google Clinical & Diagnostic Analysis:</strong><br>
+            <strong>🩺 Dr. Bot Clinical Analysis:</strong><br>
             ${result.clinicalAnalysis}
           </div>
 

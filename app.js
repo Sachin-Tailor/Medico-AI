@@ -765,74 +765,120 @@ function loadSampleRx(sample) {
   const countBadge = document.getElementById("rxMatchCountBadge");
   const actionBanner = document.getElementById("rxActionBanner");
 
-  // Save active prescription in LocalStorage & render preview
-  localStorage.setItem("medico_active_prescription", JSON.stringify(sample));
   renderActivePrescriptionPreview(sample);
 
   const renderResults = () => {
     preview.classList.remove("scanning");
-    extractedTextBox.textContent = sample.rawText || "No text detected in image.";
+    extractedTextBox.textContent = sample.rawText || "No readable text detected in image.";
+
+    // 1. Reject Invalid / Non-Prescription Documents
+    if (sample.isValidPrescription === false) {
+      if (actionBanner) actionBanner.style.display = "none";
+      countBadge.textContent = "Invalid Document";
+      chipsContainer.innerHTML = `<span class="detected-chip" style="background:#fef2f2; color:#dc2626; border-color:#fecaca;">❌ Not a Verified Rx</span>`;
+      matchedContainer.innerHTML = `
+        <div style="padding: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 0.86rem; line-height: 1.55;">
+          <strong>❌ Invalid Document — Only Verified Doctor / Clinic Prescriptions Allowed</strong><br>
+          Yeh image kisi Doctor ya Clinic ki verified prescription nahi lag rahi hai (is me <em>Dr. / Clinic naam, Rx, ya dawaaiyon ki jankari</em> nahi mili).<br>
+          Kripya sirf valid aur saaf <strong>Doctor / Clinic Prescription</strong> upload karein.
+        </div>
+      `;
+      showToast("❌ Invalid Document: Sirf verified Doctor/Clinic prescription upload karein.");
+      return;
+    }
+
+    // Valid prescription: save to LocalStorage
+    localStorage.setItem("medico_active_prescription", JSON.stringify(sample));
 
     const keywords = sample.keywords || [];
     chipsContainer.innerHTML = keywords.length > 0
       ? keywords.map(kw => `<span class="detected-chip">${kw}</span>`).join("")
-      : `<span style="font-size: 0.8rem; color: #94a3b8;">No clinical keywords detected</span>`;
+      : `<span style="font-size: 0.8rem; color: #94a3b8;">Verified Doctor Prescription</span>`;
 
     const matchedMeds = MEDICINES_DATA.filter(m => (sample.matchedMedicineIds || []).includes(m.id));
+    const extraMeds = sample.extraClinicalMeds || [];
+    const totalDetected = matchedMeds.length + extraMeds.length;
+
     countBadge.textContent = `${matchedMeds.length} Generic Medicine${matchedMeds.length === 1 ? "" : "s"} Matched`;
 
-    if (matchedMeds.length === 0) {
+    if (totalDetected === 0) {
       if (actionBanner) actionBanner.style.display = "none";
       matchedContainer.innerHTML = `
         <div style="padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; color: #92400e; font-size: 0.86rem; line-height: 1.5;">
-          <strong>⚠️ Koi clear medicine naam detect nahi hua.</strong><br>
-          Kripya saaf, seedhi aur achhi roshni wali prescription photo upload karein — ya niche diye gaye <strong>Sample Doctor Prescriptions</strong> par click karke test karein.
+          <strong>✅ Verified Prescription Detected, par dawaai ka naam saaf padha nahi gaya.</strong><br>
+          Kripya dawaaiyon ke naam par thoda aur zoom karke saaf photo upload karein, ya niche diye gaye <strong>Sample Doctor Prescriptions</strong> try karein.
         </div>
       `;
-      showToast("OCR complete: Image me koi clear medicine naam nahi mila.");
+      showToast("Prescription verified, par medicine names clearly readable nahi the.");
       return;
     }
 
-    const { totalMrp, totalGeneric, savingsAmount, savingsPercent } = calculateSavings(matchedMeds);
+    let htmlOutput = "";
 
-    if (actionBanner) {
-      actionBanner.style.display = "flex";
-      const savingsTitle = document.getElementById("rxBannerSavingsTitle");
-      const savingsSub = document.getElementById("rxBannerSubTitle");
-      if (savingsTitle) savingsTitle.textContent = `🎉 You Save ₹${savingsAmount} (${savingsPercent}%) on this prescription`;
-      if (savingsSub) savingsSub.textContent = `Branded MRP: ₹${totalMrp} | Jan Aushadhi Generic Total: ₹${totalGeneric}`;
+    if (matchedMeds.length > 0) {
+      const { totalMrp, totalGeneric, savingsAmount, savingsPercent } = calculateSavings(matchedMeds);
+
+      if (actionBanner) {
+        actionBanner.style.display = "flex";
+        const savingsTitle = document.getElementById("rxBannerSavingsTitle");
+        const savingsSub = document.getElementById("rxBannerSubTitle");
+        if (savingsTitle) savingsTitle.textContent = `🎉 You Save ₹${savingsAmount} (${savingsPercent}%) on this prescription`;
+        if (savingsSub) savingsSub.textContent = `Branded MRP: ₹${totalMrp} | Jan Aushadhi Generic Total: ₹${totalGeneric}`;
+      }
+
+      htmlOutput += matchedMeds.map(med => {
+        const exp = sample.itemsExplanation ? sample.itemsExplanation.find(i => i.medId === med.id || i.name.toLowerCase().includes(med.name.toLowerCase().split(" ")[0])) : null;
+        const purposeText = exp ? exp.purposeHindi : med.description;
+        const timingText = exp ? `${exp.timingHindi} • ${exp.frequencyHindi}` : `${med.dosageInfo.timing} (${med.dosageInfo.frequency})`;
+
+        return `
+          <div class="rx-matched-med-card">
+            <div class="rx-med-info">
+              <h4>
+                ${med.name}
+                <span class="savings-tag">Save ${med.savingsPercent}%</span>
+              </h4>
+              <div class="med-hindi-purpose">
+                🎯 ${purposeText}
+              </div>
+              <div class="med-timing-label">
+                ⏰ ${timingText}
+              </div>
+              <div class="med-price-line">
+                Branded (${med.brandName.split('/')[0]}): <del>₹${med.mrp}</del> | <strong>Generic (Jan Aushadhi): ₹${med.genericPrice}</strong>
+              </div>
+            </div>
+            <button class="btn-primary" style="padding: 8px 18px; font-size: 0.85rem;" onclick="db.addToCart('${med.id}')">
+              Add to Cart
+            </button>
+          </div>
+        `;
+      }).join("");
+    } else if (actionBanner) {
+      actionBanner.style.display = "none";
     }
 
-    matchedContainer.innerHTML = matchedMeds.map(med => {
-      const exp = sample.itemsExplanation ? sample.itemsExplanation.find(i => i.medId === med.id || i.name.toLowerCase().includes(med.name.toLowerCase().split(" ")[0])) : null;
-      const purposeText = exp ? exp.purposeHindi : med.description;
-      const timingText = exp ? `${exp.timingHindi} • ${exp.frequencyHindi}` : `${med.dosageInfo.timing} (${med.dosageInfo.frequency})`;
-
-      return `
-        <div class="rx-matched-med-card">
-          <div class="rx-med-info">
-            <h4>
-              ${med.name}
-              <span class="savings-tag">Save ${med.savingsPercent}%</span>
-            </h4>
-            <div class="med-hindi-purpose">
-              🎯 ${purposeText}
-            </div>
-            <div class="med-timing-label">
-              ⏰ ${timingText}
-            </div>
-            <div class="med-price-line">
-              Branded (${med.brandName.split('/')[0]}): <del>₹${med.mrp}</del> | <strong>Generic (Jan Aushadhi): ₹${med.genericPrice}</strong>
-            </div>
+    if (extraMeds.length > 0) {
+      htmlOutput += `
+        <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cbd5e1;">
+          <div style="font-size: 0.78rem; font-weight: 800; color: #047857; text-transform: uppercase; margin-bottom: 8px;">
+            🩺 Additional Prescribed Medicines (Verified Clinical Info)
           </div>
-          <button class="btn-primary" style="padding: 8px 18px; font-size: 0.85rem;" onclick="db.addToCart('${med.id}')">
-            Add to Cart
-          </button>
+          ${extraMeds.map(em => `
+            <div class="rx-matched-med-card" style="background: #f8fafc;">
+              <div class="rx-med-info">
+                <h4>💊 ${em.name}</h4>
+                <div class="med-hindi-purpose" style="color: #334155;">${em.summary}</div>
+                <div class="med-timing-label">⏰ ${em.schedule}</div>
+              </div>
+            </div>
+          `).join("")}
         </div>
       `;
-    }).join("");
+    }
 
-    showToast(`Prescription Scanned! ${matchedMeds.length} generic medicines matched (Save ₹${savingsAmount})`);
+    matchedContainer.innerHTML = htmlOutput;
+    showToast(`✅ Verified Prescription Scanned! ${totalDetected} medicine${totalDetected === 1 ? "" : "s"} analyzed.`);
   };
 
   if (sample.isRealOCR) {
@@ -849,8 +895,11 @@ function preprocessRxImageForOCR(dataUrl) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const minWidth = 1100;
-      const scale = img.width < minWidth ? minWidth / img.width : 1;
+      // Keep width in optimal 1000-1600px range for fast & accurate OCR
+      let scale = 1;
+      if (img.width < 1000) scale = 1000 / img.width;
+      else if (img.width > 1600) scale = 1600 / img.width;
+
       const canvas = document.createElement("canvas");
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
@@ -877,6 +926,46 @@ function preprocessRxImageForOCR(dataUrl) {
   });
 }
 
+async function enrichUnknownRxMedicines(lines, alreadyMatchedNames) {
+  if (typeof drBot === "undefined") return [];
+  const candidateNames = [];
+
+  for (const line of lines) {
+    const m = line.match(/^(?:tab\.?|cap\.?|syp\.?|syrup|inj\.?|drops|rx)?\s*([a-zA-Z][a-zA-Z0-9\-]{2,}(?:\s+[a-zA-Z][a-zA-Z0-9\-]{2,})?)/i);
+    if (!m) continue;
+    const isMedLine = /\b(tab|cap|syp|syrup|inj|drops|mg|mcg|ml|od|bd|tds|hs|sos|1-0-1|1-0-0|0-0-1)\b/i.test(line);
+    if (!isMedLine) continue;
+
+    const rawName = m[1].trim();
+    const low = rawName.toLowerCase();
+    if (["patient", "doctor", "clinic", "hospital", "date", "name", "age", "diagnosis", "advice", "follow"].includes(low)) continue;
+    if (alreadyMatchedNames.some(n => low.includes(n) || n.includes(low))) continue;
+
+    if (!candidateNames.some(c => c.name.toLowerCase() === low)) {
+      candidateNames.push({ name: rawName, line });
+    }
+    if (candidateNames.length >= 3) break;
+  }
+
+  if (candidateNames.length === 0) return [];
+
+  const enriched = await Promise.all(candidateNames.map(async (item) => {
+    const [fda, wiki] = await Promise.all([
+      drBot.searchOpenFDA(item.name),
+      drBot.searchWikipedia(item.name, "en")
+    ]);
+    const summary = fda?.indications || wiki?.extract || "Doctor dwara prescribe ki gayi dawaai — sahi samay par paani ke sath lein.";
+    const scheduleMatch = item.line.match(/\b(1-0-1|1-0-0|0-0-1|1-1-1|od|bd|tds|hs|sos)\b/i);
+    return {
+      name: fda?.brand ? `${item.name} (${fda.brand})` : item.name,
+      summary: summary.length > 220 ? summary.slice(0, 220).trim() + "..." : summary,
+      schedule: scheduleMatch ? `Detected schedule: ${scheduleMatch[1].toUpperCase()}` : "Doctor ke nirdesh anusar"
+    };
+  }));
+
+  return enriched;
+}
+
 function parsePrescriptionOCRText(ocrText, fileName, dataUrl) {
   const cleanText = (ocrText || "").trim();
   const lines = cleanText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -886,11 +975,11 @@ function parsePrescriptionOCRText(ocrText, fileName, dataUrl) {
     { id: "med-4", aliases: ["dolo", "d0lo", "paracetamol", "paracetmol", "acetaminophen", "calpol", "crocin", "pacimol", "p-650", "650mg"] },
     { id: "med-6", aliases: ["pan-d", "pan d", "pand", "pantoprazole", "pantop", "pantocid", "domperidone", "rabeprazole", "omeprazole"] },
     { id: "med-3", aliases: ["azithromycin", "azithro", "azithral", "zithromax", "azee", "azi 500"] },
-    { id: "med-7", aliases: ["montair", "montek", "montelukast", "levocetirizine", "telekast", "lc"] },
+    { id: "med-7", aliases: ["montair", "montek", "montelukast", "levocetirizine", "telekast", "montair-lc"] },
     { id: "med-5", aliases: ["metformin", "glycomet", "glucophage", "metform"] },
     { id: "med-8", aliases: ["telmisartan", "telma", "telmikind", "telsar"] },
     { id: "med-1", aliases: ["amlodipine", "amlip", "norvasc", "stamlo", "amlo"] },
-    { id: "med-2", aliases: ["amoxicillin", "amox", "mox 500", "mox", "novamox", "augmentin"] },
+    { id: "med-2", aliases: ["amoxicillin", "amox", "mox 500", "novamox", "amoxyclav"] },
     { id: "med-9", aliases: ["atorvastatin", "atorva", "lipitor", "atorlip"] },
     { id: "med-10", aliases: ["aceclofenac", "zerodol", "hifenac", "diclofenac", "combiflam"] },
     { id: "med-11", aliases: ["ciprofloxacin", "ciplox", "cifran", "ciprobid"] },
@@ -942,7 +1031,6 @@ function parsePrescriptionOCRText(ocrText, fileName, dataUrl) {
     const medObj = MEDICINES_DATA.find(m => m.id === entry.id);
     if (!medObj) continue;
 
-    // Find first matching line
     const matchingLine = lines.find(line => {
       const lowLine = line.toLowerCase();
       return entry.aliases.some(alias => {
@@ -967,25 +1055,36 @@ function parsePrescriptionOCRText(ocrText, fileName, dataUrl) {
     }
   }
 
-  // Extract doctor name if present in OCR text
+  // Validate whether this document is an actual Doctor / Clinic Prescription
+  let rxSignals = 0;
+  if (/\b(rx|℞)\b/i.test(cleanText)) rxSignals++;
+  if (/\b(dr\.?|doctor|mbbs|md|ms|clinic|hospital|nursing home|medical|reg\.?\s*no)\b/i.test(cleanText)) rxSignals++;
+  if (/\b(tab|tablet|cap|capsule|syp|syrup|inj|injection|drops|ointment|mg|mcg|ml)\b/i.test(cleanText)) rxSignals++;
+  if (/\b(od|bd|tds|qid|hs|sos|1-0-1|1-0-0|0-0-1|1-1-1|before food|after food)\b/i.test(cleanText)) rxSignals++;
+  if (/\b(patient|diagnosis|symptoms|advice|follow\s*up)\b/i.test(cleanText)) rxSignals++;
+
+  const isValidPrescription = matchedIds.length >= 1 || rxSignals >= 2;
+
   const drLine = lines.find(l => /\bdr\.?\s+[a-z]/i.test(l));
-  const doctorName = drLine ? drLine.slice(0, 48) : "Verified Medical Prescription";
+  const doctorName = drLine ? drLine.slice(0, 48) : "Verified Clinic Prescription";
 
   return {
     id: "uploaded-" + Date.now(),
     isRealOCR: true,
+    isValidPrescription,
     fileName,
     imageSrc: dataUrl,
     doctorName,
     hospital: "Scanned via Medico AI OCR",
     patientName: "Patient",
     date: new Date().toLocaleDateString("en-GB"),
-    diagnosis: matchedIds.length > 0 ? "Detected from Uploaded Prescription" : "Prescription Scanned",
-    diagnosisHindi: matchedIds.length > 0 ? "Aapki scan ki gayi parchi ke anusar" : "Scanned Prescription",
+    diagnosis: matchedIds.length > 0 ? "Detected from Verified Prescription" : "Verified Clinic Prescription",
+    diagnosisHindi: "Aapki scan ki gayi verified parchi ke anusar",
     rawText: cleanText || "(Image me koi readable text nahi mila)",
     keywords: Array.from(detectedKeywords),
     matchedMedicineIds: matchedIds,
-    itemsExplanation
+    itemsExplanation,
+    lines
   };
 }
 
@@ -998,14 +1097,13 @@ async function handleRxFileUpload(e) {
   const chipsContainer = document.getElementById("detectedKeywordsDisplay");
 
   preview.classList.add("scanning");
-  extractedTextBox.textContent = `Scanning prescription: ${file.name}...\nEnhancing image contrast & running OCR text recognition...`;
+  extractedTextBox.textContent = `Scanning prescription: ${file.name}...\nEnhancing image contrast & verifying Doctor/Clinic prescription...`;
   chipsContainer.innerHTML = `<span style="font-size: 0.8rem; color: #38bdf8;">OCR Engine Initializing...</span>`;
 
   const reader = new FileReader();
   reader.onload = async function(event) {
     const dataUrl = event.target.result;
 
-    // Show uploaded image preview right away
     renderActivePrescriptionPreview({
       fileName: file.name,
       imageSrc: dataUrl
@@ -1018,13 +1116,31 @@ async function handleRxFileUpload(e) {
           logger: m => {
             if (m.status === "recognizing text" && typeof m.progress === "number") {
               const pct = Math.round(m.progress * 100);
-              extractedTextBox.textContent = `Scanning "${file.name}"... ${pct}% complete\nReading medicine names, strengths & dosage shorthand (OD, BD, TDS, HS)...`;
+              extractedTextBox.textContent = `Scanning "${file.name}"... ${pct}% complete\nVerifying Doctor/Clinic prescription & reading medicines...`;
             }
           }
         });
 
         const ocrText = result?.data?.text || "";
         const parsedRx = parsePrescriptionOCRText(ocrText, file.name, dataUrl);
+
+        if (parsedRx.isValidPrescription) {
+          extractedTextBox.textContent = `Verified Doctor Prescription detected! Analyzing prescribed medicines...`;
+          const alreadyNames = parsedRx.itemsExplanation.map(i => i.name.toLowerCase().split(" ")[0]);
+          const extraMeds = await enrichUnknownRxMedicines(parsedRx.lines, alreadyNames);
+          parsedRx.extraClinicalMeds = extraMeds;
+          extraMeds.forEach(em => {
+            parsedRx.itemsExplanation.push({
+              name: em.name,
+              duration: "Doctor ke nirdesh anusar",
+              frequencyHindi: em.schedule,
+              timingHindi: "Doctor ki salah ke mutabiq",
+              purposeHindi: em.summary,
+              savings: 0
+            });
+          });
+        }
+
         loadSampleRx(parsedRx);
         return;
       }
@@ -1045,6 +1161,7 @@ async function handleRxFileUpload(e) {
       ...chosenSample,
       id: "uploaded-" + Date.now(),
       isRealOCR: true,
+      isValidPrescription: true,
       fileName: file.name,
       imageSrc: dataUrl,
       date: new Date().toLocaleDateString("en-GB")

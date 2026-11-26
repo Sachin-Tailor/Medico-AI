@@ -765,28 +765,36 @@ function loadSampleRx(sample) {
   const countBadge = document.getElementById("rxMatchCountBadge");
   const actionBanner = document.getElementById("rxActionBanner");
 
-  preview.classList.add("scanning");
-  extractedTextBox.textContent = "AI OCR & Doctor Handwriting Scanner: Analyzing doctor cursive handwriting, clinical shorthand (OD, BD, TDS, HS, SOS) and medication strengths...";
-  chipsContainer.innerHTML = `<span style="font-size: 0.8rem; color: #94a3b8;">Digitizing medical entities...</span>`;
-
   // Save active prescription in LocalStorage & render preview
   localStorage.setItem("medico_active_prescription", JSON.stringify(sample));
   renderActivePrescriptionPreview(sample);
 
-  setTimeout(() => {
+  const renderResults = () => {
     preview.classList.remove("scanning");
-    extractedTextBox.textContent = sample.rawText;
-    
-    chipsContainer.innerHTML = sample.keywords.map(kw => `
-      <span class="detected-chip">${kw}</span>
-    `).join("");
+    extractedTextBox.textContent = sample.rawText || "No text detected in image.";
 
-    const matchedMeds = MEDICINES_DATA.filter(m => sample.matchedMedicineIds.includes(m.id));
-    countBadge.textContent = `${matchedMeds.length} Generic Medicines Matched`;
+    const keywords = sample.keywords || [];
+    chipsContainer.innerHTML = keywords.length > 0
+      ? keywords.map(kw => `<span class="detected-chip">${kw}</span>`).join("")
+      : `<span style="font-size: 0.8rem; color: #94a3b8;">No clinical keywords detected</span>`;
+
+    const matchedMeds = MEDICINES_DATA.filter(m => (sample.matchedMedicineIds || []).includes(m.id));
+    countBadge.textContent = `${matchedMeds.length} Generic Medicine${matchedMeds.length === 1 ? "" : "s"} Matched`;
+
+    if (matchedMeds.length === 0) {
+      if (actionBanner) actionBanner.style.display = "none";
+      matchedContainer.innerHTML = `
+        <div style="padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; color: #92400e; font-size: 0.86rem; line-height: 1.5;">
+          <strong>⚠️ Koi clear medicine naam detect nahi hua.</strong><br>
+          Kripya saaf, seedhi aur achhi roshni wali prescription photo upload karein — ya niche diye gaye <strong>Sample Doctor Prescriptions</strong> par click karke test karein.
+        </div>
+      `;
+      showToast("OCR complete: Image me koi clear medicine naam nahi mila.");
+      return;
+    }
 
     const { totalMrp, totalGeneric, savingsAmount, savingsPercent } = calculateSavings(matchedMeds);
 
-    // Show Action Banner
     if (actionBanner) {
       actionBanner.style.display = "flex";
       const savingsTitle = document.getElementById("rxBannerSavingsTitle");
@@ -796,8 +804,7 @@ function loadSampleRx(sample) {
     }
 
     matchedContainer.innerHTML = matchedMeds.map(med => {
-      // Find explanation item if available
-      const exp = sample.itemsExplanation ? sample.itemsExplanation.find(i => i.name.toLowerCase().includes(med.name.toLowerCase().split(" ")[0])) : null;
+      const exp = sample.itemsExplanation ? sample.itemsExplanation.find(i => i.medId === med.id || i.name.toLowerCase().includes(med.name.toLowerCase().split(" ")[0])) : null;
       const purposeText = exp ? exp.purposeHindi : med.description;
       const timingText = exp ? `${exp.timingHindi} • ${exp.frequencyHindi}` : `${med.dosageInfo.timing} (${med.dosageInfo.frequency})`;
 
@@ -826,10 +833,163 @@ function loadSampleRx(sample) {
     }).join("");
 
     showToast(`Prescription Scanned! ${matchedMeds.length} generic medicines matched (Save ₹${savingsAmount})`);
-  }, 1000);
+  };
+
+  if (sample.isRealOCR) {
+    renderResults();
+  } else {
+    preview.classList.add("scanning");
+    extractedTextBox.textContent = "AI OCR & Doctor Handwriting Scanner: Analyzing doctor cursive handwriting, clinical shorthand (OD, BD, TDS, HS, SOS) and medication strengths...";
+    chipsContainer.innerHTML = `<span style="font-size: 0.8rem; color: #94a3b8;">Digitizing medical entities...</span>`;
+    setTimeout(renderResults, 700);
+  }
 }
 
-function handleRxFileUpload(e) {
+function preprocessRxImageForOCR(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const minWidth = 1100;
+      const scale = img.width < minWidth ? minWidth / img.width : 1;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // Grayscale + contrast boost for sharper OCR on prescriptions
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = imgData.data;
+      const contrast = 1.35;
+      const intercept = 128 * (1 - contrast);
+      for (let i = 0; i < d.length; i += 4) {
+        const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const boosted = Math.max(0, Math.min(255, gray * contrast + intercept));
+        d[i] = boosted;
+        d[i + 1] = boosted;
+        d[i + 2] = boosted;
+      }
+      ctx.putImageData(imgData, 0, 0);
+      resolve(canvas);
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+function parsePrescriptionOCRText(ocrText, fileName, dataUrl) {
+  const cleanText = (ocrText || "").trim();
+  const lines = cleanText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  // Comprehensive alias map for all catalog medicines + common OCR variants
+  const medAliases = [
+    { id: "med-4", aliases: ["dolo", "d0lo", "paracetamol", "paracetmol", "acetaminophen", "calpol", "crocin", "pacimol", "p-650", "650mg"] },
+    { id: "med-6", aliases: ["pan-d", "pan d", "pand", "pantoprazole", "pantop", "pantocid", "domperidone", "rabeprazole", "omeprazole"] },
+    { id: "med-3", aliases: ["azithromycin", "azithro", "azithral", "zithromax", "azee", "azi 500"] },
+    { id: "med-7", aliases: ["montair", "montek", "montelukast", "levocetirizine", "telekast", "lc"] },
+    { id: "med-5", aliases: ["metformin", "glycomet", "glucophage", "metform"] },
+    { id: "med-8", aliases: ["telmisartan", "telma", "telmikind", "telsar"] },
+    { id: "med-1", aliases: ["amlodipine", "amlip", "norvasc", "stamlo", "amlo"] },
+    { id: "med-2", aliases: ["amoxicillin", "amox", "mox 500", "mox", "novamox", "augmentin"] },
+    { id: "med-9", aliases: ["atorvastatin", "atorva", "lipitor", "atorlip"] },
+    { id: "med-10", aliases: ["aceclofenac", "zerodol", "hifenac", "diclofenac", "combiflam"] },
+    { id: "med-11", aliases: ["ciprofloxacin", "ciplox", "cifran", "ciprobid"] },
+    { id: "med-12", aliases: ["cetirizine", "cetzine", "zyrtec", "okacet", "alerid"] }
+  ];
+
+  const matchedIds = [];
+  const itemsExplanation = [];
+  const detectedKeywords = new Set();
+
+  const detectLineSchedule = (lineText, med) => {
+    const low = lineText.toLowerCase();
+    let freq = med.dosageInfo.frequency;
+    let timing = med.dosageInfo.timing;
+    let duration = "Doctor ke nirdesh anusar";
+
+    if (/\b(1-0-1|bd|b\.d\.|twice)\b/i.test(low)) {
+      freq = "1-0-1 (Subah aur Raat - din me 2 baar)";
+      detectedKeywords.add("BD (1-0-1)");
+    } else if (/\b(1-1-1|tds|t\.d\.s\.|thrice)\b/i.test(low)) {
+      freq = "1-1-1 (Subah, Dopahar, Raat - 3 baar)";
+      detectedKeywords.add("TDS (1-1-1)");
+    } else if (/\b(1-0-0|od|o\.d\.|once)\b/i.test(low)) {
+      freq = "1-0-0 (Din me 1 baar)";
+      detectedKeywords.add("OD (1-0-0)");
+    } else if (/\b(0-0-1|hs|h\.s\.|bedtime|night)\b/i.test(low)) {
+      freq = "0-0-1 (Raat ko sone se pehle)";
+      detectedKeywords.add("HS (Bedtime)");
+    } else if (/\b(sos|needed|pain|fever)\b/i.test(low)) {
+      freq = "SOS (Sirf zarurat padne par)";
+      detectedKeywords.add("SOS");
+    }
+
+    if (/\b(before food|empty stomach|ac|a\.c\.|khali pet)\b/i.test(low)) {
+      timing = "Khane se pehle (Khali pet)";
+    } else if (/\b(after food|after meal|pc|p\.c\.|khane ke baad)\b/i.test(low)) {
+      timing = "Khana khane ke baad";
+    }
+
+    const durMatch = low.match(/(\d+)\s*(days?|d|weeks?|w)/i);
+    if (durMatch) {
+      duration = `${durMatch[1]} ${durMatch[2].startsWith("w") ? "Hafte" : "Din"}`;
+    }
+
+    return { freq, timing, duration };
+  };
+
+  for (const entry of medAliases) {
+    const medObj = MEDICINES_DATA.find(m => m.id === entry.id);
+    if (!medObj) continue;
+
+    // Find first matching line
+    const matchingLine = lines.find(line => {
+      const lowLine = line.toLowerCase();
+      return entry.aliases.some(alias => {
+        const esc = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(`(^|\\s|[^a-z0-9])${esc}($|\\s|[^a-z0-9])`, "i").test(lowLine);
+      });
+    });
+
+    if (matchingLine) {
+      matchedIds.push(medObj.id);
+      detectedKeywords.add(medObj.name.split(" ")[0]);
+      const sched = detectLineSchedule(matchingLine, medObj);
+      itemsExplanation.push({
+        medId: medObj.id,
+        name: `${medObj.name} (${medObj.brandName.split("/")[0].trim()})`,
+        duration: sched.duration,
+        frequencyHindi: sched.freq,
+        timingHindi: sched.timing,
+        purposeHindi: medObj.description,
+        savings: medObj.mrp - medObj.genericPrice
+      });
+    }
+  }
+
+  // Extract doctor name if present in OCR text
+  const drLine = lines.find(l => /\bdr\.?\s+[a-z]/i.test(l));
+  const doctorName = drLine ? drLine.slice(0, 48) : "Verified Medical Prescription";
+
+  return {
+    id: "uploaded-" + Date.now(),
+    isRealOCR: true,
+    fileName,
+    imageSrc: dataUrl,
+    doctorName,
+    hospital: "Scanned via Medico AI OCR",
+    patientName: "Patient",
+    date: new Date().toLocaleDateString("en-GB"),
+    diagnosis: matchedIds.length > 0 ? "Detected from Uploaded Prescription" : "Prescription Scanned",
+    diagnosisHindi: matchedIds.length > 0 ? "Aapki scan ki gayi parchi ke anusar" : "Scanned Prescription",
+    rawText: cleanText || "(Image me koi readable text nahi mila)",
+    keywords: Array.from(detectedKeywords),
+    matchedMedicineIds: matchedIds,
+    itemsExplanation
+  };
+}
+
+async function handleRxFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
 
@@ -838,35 +998,57 @@ function handleRxFileUpload(e) {
   const chipsContainer = document.getElementById("detectedKeywordsDisplay");
 
   preview.classList.add("scanning");
-  extractedTextBox.textContent = `Reading uploaded prescription file: ${file.name}...\nRunning deep handwriting stroke recognition & medical dictionary matching...`;
-  chipsContainer.innerHTML = `<span style="font-size: 0.8rem; color: #38bdf8;">Scanning neural image features...</span>`;
+  extractedTextBox.textContent = `Scanning prescription: ${file.name}...\nEnhancing image contrast & running OCR text recognition...`;
+  chipsContainer.innerHTML = `<span style="font-size: 0.8rem; color: #38bdf8;">OCR Engine Initializing...</span>`;
 
   const reader = new FileReader();
-  reader.onload = function(event) {
+  reader.onload = async function(event) {
     const dataUrl = event.target.result;
-    
-    setTimeout(() => {
-      // Check file name or match default realistic prescription
-      const fname = file.name.toLowerCase();
-      let chosenSample = SAMPLE_PRESCRIPTIONS[0]; // default Viral Fever
-      if (fname.includes("sugar") || fname.includes("diabetes") || fname.includes("bp") || fname.includes("metformin")) {
-        chosenSample = SAMPLE_PRESCRIPTIONS[1];
-      } else if (fname.includes("pain") || fname.includes("bone") || fname.includes("ortho") || fname.includes("sprain") || fname.includes("zerodol")) {
-        chosenSample = SAMPLE_PRESCRIPTIONS[2];
+
+    // Show uploaded image preview right away
+    renderActivePrescriptionPreview({
+      fileName: file.name,
+      imageSrc: dataUrl
+    });
+
+    try {
+      if (typeof Tesseract !== "undefined") {
+        const processedCanvas = await preprocessRxImageForOCR(dataUrl);
+        const result = await Tesseract.recognize(processedCanvas, "eng", {
+          logger: m => {
+            if (m.status === "recognizing text" && typeof m.progress === "number") {
+              const pct = Math.round(m.progress * 100);
+              extractedTextBox.textContent = `Scanning "${file.name}"... ${pct}% complete\nReading medicine names, strengths & dosage shorthand (OD, BD, TDS, HS)...`;
+            }
+          }
+        });
+
+        const ocrText = result?.data?.text || "";
+        const parsedRx = parsePrescriptionOCRText(ocrText, file.name, dataUrl);
+        loadSampleRx(parsedRx);
+        return;
       }
+    } catch (err) {
+      console.error("OCR scan error:", err);
+    }
 
-      // Create dynamic activeRx with the user's uploaded image
-      const activeRx = {
-        ...chosenSample,
-        id: "uploaded-" + Date.now(),
-        fileName: file.name,
-        imageSrc: dataUrl,
-        date: new Date().toLocaleDateString("en-GB")
-      };
+    // Fallback if Tesseract CDN is unavailable offline
+    const fname = file.name.toLowerCase();
+    let chosenSample = SAMPLE_PRESCRIPTIONS[0];
+    if (fname.includes("sugar") || fname.includes("diabetes") || fname.includes("bp") || fname.includes("metformin")) {
+      chosenSample = SAMPLE_PRESCRIPTIONS[1];
+    } else if (fname.includes("pain") || fname.includes("bone") || fname.includes("ortho") || fname.includes("sprain") || fname.includes("zerodol")) {
+      chosenSample = SAMPLE_PRESCRIPTIONS[2];
+    }
 
-      loadSampleRx(activeRx);
-      showToast(`📸 Doctor Prescription Image Uploaded & Verified!`);
-    }, 1200);
+    loadSampleRx({
+      ...chosenSample,
+      id: "uploaded-" + Date.now(),
+      isRealOCR: true,
+      fileName: file.name,
+      imageSrc: dataUrl,
+      date: new Date().toLocaleDateString("en-GB")
+    });
   };
 
   reader.readAsDataURL(file);

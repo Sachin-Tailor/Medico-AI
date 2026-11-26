@@ -1240,23 +1240,84 @@ class DrBotEngine {
     }
 
     const titleText = ddgData?.heading || fdaData?.brand || wikiResult?.title || this.escapeHtml(rawInput);
+    const combinedContext = [
+      rawInput,
+      ddgData?.text || "",
+      fdaData?.indications || "",
+      wikiResult?.extract || ""
+    ].join(" ");
+    const suggestedMedIds = this.findRelevantMedicinesForQuery(rawInput, combinedContext);
 
     return {
       type: "direct_answer",
       title: `${this.escapeHtml(titleText)}`,
       htmlContent: htmlParts.join(""),
-      recommendedMedIds: []
+      recommendedMedIds: suggestedMedIds
     };
+  }
+
+  findRelevantMedicinesForQuery(queryText, extraContext = "") {
+    const text = `${queryText} ${extraContext}`.toLowerCase();
+    const matchedIds = new Set();
+
+    // Match against conditionsKB keywords first
+    for (const c of this.conditionsKB) {
+      if (c.recommendedMedIds && c.recommendedMedIds.length > 0) {
+        if (c.keywords.some(kw => this.hasKeyword(text, kw))) {
+          c.recommendedMedIds.forEach(id => matchedIds.add(id));
+        }
+      }
+    }
+
+    // Match broad clinical categories if still empty or relevant
+    const categoryRules = [
+      { id: "med-4", terms: ["fever", "bukhar", "headache", "sar dard", "pain", "dard", "viral", "flu", "typhoid", "dengue", "body ache"] },
+      { id: "med-6", terms: ["acidity", "gas", "acid", "heartburn", "gerd", "ulcer", "gastric", "indigestion", "pet", "stomach", "reflux"] },
+      { id: "med-7", terms: ["cough", "khansi", "cold", "sardi", "asthma", "allergic", "sinus", "sinusitis", "rhinitis", "breathing", "sneezing"] },
+      { id: "med-3", terms: ["throat", "tonsil", "tonsillitis", "bronchitis", "pneumonia", "bacterial", "respiratory", "chest infection"] },
+      { id: "med-10", terms: ["arthritis", "joint", "knee", "back pain", "kamar", "toothache", "dant", "sprain", "muscle", "inflammation", "sujan"] },
+      { id: "med-11", terms: ["uti", "urine", "urinary", "diarrhea", "loose motion", "dast", "food poisoning"] },
+      { id: "med-12", terms: ["allergy", "itching", "khujli", "rash", "hives", "skin", "eczema"] },
+      { id: "med-5", terms: ["diabetes", "sugar", "glucose", "insulin", "hba1c"] },
+      { id: "med-8", terms: ["blood pressure", "hypertension", "bp"] },
+      { id: "med-9", terms: ["cholesterol", "triglyceride", "lipid", "heart"] },
+      { id: "med-2", terms: ["ear infection", "dental infection", "abscess", "amoxicillin"] }
+    ];
+
+    for (const rule of categoryRules) {
+      if (rule.terms.some(t => this.hasKeyword(text, t))) {
+        matchedIds.add(rule.id);
+      }
+    }
+
+    return Array.from(matchedIds).slice(0, 3);
   }
 
   generateSmartFallback(rawInput) {
     const safeInput = this.escapeHtml(rawInput);
+    const suggestedMedIds = this.findRelevantMedicinesForQuery(rawInput);
+
+    if (suggestedMedIds.length > 0) {
+      return {
+        type: "direct_answer",
+        title: `Dr. Bot Advice: ${safeInput}`,
+        htmlContent: `
+          <p style="font-size: 0.86rem; line-height: 1.55; color: #1e293b; margin-bottom: 6px;">
+            Aapki problem (<strong>"${safeInput}"</strong>) ke hisaab se niche di gayi Jan Aushadhi generic dawaiyan upyogi ho sakti hain.
+          </p>
+          <p style="font-size: 0.8rem; color: #64748b; margin: 0;">
+            💡 <em>Sahi dosage aur timing ke liye niche di gayi dawaai par check karein ya doctor se consult karein.</em>
+          </p>
+        `,
+        recommendedMedIds: suggestedMedIds
+      };
+    }
 
     return {
       type: "chat",
       text: `
         Main aapke sawaal (<strong>"${safeInput}"</strong>) ko samajh raha hoon. 🩺<br><br>
-        Aap thoda aur clear likh sakte hain — jaise kis <strong>bimari, lakshan (bukhar, pet dard, sir dard, gas)</strong> ya kis <strong>dawaai ke naam</strong> ke baare me jaanna hai? Main turant aapko sahi aur aasan jawab dunga!
+        Aap thoda aur clear likh sakte hain — jaise kis <strong>bimari, lakshan (bukhar, pet dard, sir dard, gas)</strong> ya kis <strong>dawaai ke naam</strong> ke baare me jaanna hai? Main turant aapko sahi jawab aur matching generic dawaai suggest karunga!
       `
     };
   }

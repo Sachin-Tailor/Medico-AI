@@ -1260,7 +1260,25 @@ class DrBotEngine {
     const text = `${queryText} ${extraContext}`.toLowerCase();
     const matchedIds = new Set();
 
-    // Match against conditionsKB keywords first
+    // 1. Score all 112+ catalog medicines by their disease tags
+    if (typeof MEDICINES_DATA !== "undefined") {
+      const scored = [];
+      for (const m of MEDICINES_DATA) {
+        if (!m.diseases) continue;
+        const diseaseTags = m.diseases.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+        let score = 0;
+        for (const tag of diseaseTags) {
+          if (this.hasKeyword(text, tag)) {
+            score += tag.length > 5 ? 4 : 2;
+          }
+        }
+        if (score > 0) scored.push({ id: m.id, score });
+      }
+      scored.sort((a, b) => b.score - a.score);
+      scored.slice(0, 3).forEach(s => matchedIds.add(s.id));
+    }
+
+    // 2. Match against conditionsKB keywords
     for (const c of this.conditionsKB) {
       if (c.recommendedMedIds && c.recommendedMedIds.length > 0) {
         if (c.keywords.some(kw => this.hasKeyword(text, kw))) {
@@ -1269,7 +1287,7 @@ class DrBotEngine {
       }
     }
 
-    // Match broad clinical categories if still empty or relevant
+    // 3. Match broad clinical categories if still empty
     const categoryRules = [
       { id: "med-4", terms: ["fever", "bukhar", "headache", "sar dard", "pain", "dard", "viral", "flu", "typhoid", "dengue", "body ache"] },
       { id: "med-6", terms: ["acidity", "gas", "acid", "heartburn", "gerd", "ulcer", "gastric", "indigestion", "pet", "stomach", "reflux"] },

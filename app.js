@@ -614,21 +614,39 @@ function changeOrderStatusFromAdmin(orderId, newStatus) {
 // -------------------------------------------------------------
 // MEDICINES RENDERING & COMPARISON
 // -------------------------------------------------------------
+let showAllMedicines = false;
+
+function toggleShowAllMedicines() {
+  showAllMedicines = !showAllMedicines;
+  renderMedicines();
+  if (!showAllMedicines) {
+    const sec = document.getElementById("medicinesSection");
+    if (sec) sec.scrollIntoView({ behavior: "smooth" });
+  }
+}
+
 function renderMedicines() {
   const container = document.getElementById("medicinesGrid");
+  const seeAllWrapper = document.getElementById("medicinesSeeAllWrapper");
+  const allTabBtn = document.getElementById("allMedsTabBtn");
+  if (allTabBtn) allTabBtn.textContent = `All Medicines (${MEDICINES_DATA.length})`;
   if (!container) return;
 
   const filtered = MEDICINES_DATA.filter(med => {
     const matchesCategory = currentCategory === "All" || med.category === currentCategory;
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       med.name.toLowerCase().includes(searchQuery) ||
       med.genericName.toLowerCase().includes(searchQuery) ||
       med.brandName.toLowerCase().includes(searchQuery) ||
-      med.categoryLabel.toLowerCase().includes(searchQuery);
+      med.categoryLabel.toLowerCase().includes(searchQuery) ||
+      med.composition.toLowerCase().includes(searchQuery) ||
+      (med.description && med.description.toLowerCase().includes(searchQuery)) ||
+      (med.diseases && med.diseases.toLowerCase().includes(searchQuery));
     return matchesCategory && matchesSearch;
   });
 
   if (filtered.length === 0) {
+    if (seeAllWrapper) seeAllWrapper.innerHTML = "";
     container.innerHTML = `
       <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: white; border-radius: 12px;">
         <p style="font-size: 1.1rem; color: #64748b;">No medicines found matching "<strong>${searchQuery}</strong>".</p>
@@ -638,7 +656,10 @@ function renderMedicines() {
     return;
   }
 
-  container.innerHTML = filtered.map(med => {
+  const isHomeDefaultView = currentCategory === "All" && !searchQuery;
+  const displayList = (isHomeDefaultView && !showAllMedicines) ? filtered.slice(0, 12) : filtered;
+
+  container.innerHTML = displayList.map(med => {
     return `
       <div class="glass-card medicine-card">
         <div>
@@ -649,6 +670,7 @@ function renderMedicines() {
 
           <h3 class="medicine-name">${med.name}</h3>
           <p class="medicine-composition">${med.composition}</p>
+          ${med.diseases ? `<p style="font-size: 0.74rem; color: #047857; font-weight: 600; margin: 4px 0 8px;">🩺 <strong>Useful in:</strong> ${med.diseases}</p>` : ""}
 
           <div class="comparison-box">
             <div class="comp-brand">
@@ -680,6 +702,16 @@ function renderMedicines() {
       </div>
     `;
   }).join("");
+
+  if (seeAllWrapper) {
+    if (isHomeDefaultView && filtered.length > 12) {
+      seeAllWrapper.innerHTML = showAllMedicines
+        ? `<button class="btn-secondary" onclick="toggleShowAllMedicines()" style="margin: 0 auto; padding: 12px 28px; font-weight: 700;">Show Top 12 Only ↑</button>`
+        : `<button class="btn-primary" onclick="toggleShowAllMedicines()" style="margin: 0 auto; padding: 12px 32px; font-size: 0.95rem;">See All ${filtered.length} Medicines (100+ Diseases) ↓</button>`;
+    } else {
+      seeAllWrapper.innerHTML = "";
+    }
+  }
 }
 
 function resetSearch() {

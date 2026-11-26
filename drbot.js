@@ -637,56 +637,62 @@ class DrBotEngine {
   // -------------------------------------------------------------
   async processQuery(userInput) {
     const rawInput = (userInput || "").trim();
-    const cleanInput = rawInput.toLowerCase();
+    const cleanInput = rawInput.toLowerCase().replace(/\s+/g, " ");
 
     if (!cleanInput) {
       return {
         type: "chat",
-        text: "Namaste! Main Dr. Bot hoon 🩺. Aap mujhse kisi bhi dawaai, bimari ya health parameters ke baare me pooch sakte hain."
+        text: "Hello! Main Dr. Bot hoon 🩺. Main aapki kya madad kar sakta hoon? Aap mujhse kisi bhi dawaai, bimari, ya koi bhi sawaal pooch sakte hain."
       };
     }
 
-    // A. Direct Greeting Detection (Precise, Friendly & Concise)
-    // Matches: hi, hello, hey, namaste, namaskar, pranam, ram ram, kaise ho, kya haal hai, good morning/evening, etc.
+    // A. Direct Greeting Detection (handles hi, hyyy, hello, helooo, namaste, etc.)
     if (this.isGreeting(cleanInput)) {
       return {
         type: "chat",
         text: `
-          <strong>Hello! Main Dr. Bot hoon. 🩺</strong><br>
-          Main aapki kya help kar sakta hoon?<br><br>
-          Aap mujhse pooch sakte hain:<br>
-          • Kisi bhi <strong>dawaai ke baare me</strong> (jaise Dolo 650, Pan-D, Azithromycin kab aur kaise lein)<br>
-          • <strong>Bimari ya lakshan</strong> (bukhar, acidity, sardi-khansi, loose motion)<br>
-          • <strong>Health standards</strong> (normal BP, Sugar level, ya daily water intake)
+          <strong>Hello! Main aapki kya madad kar sakta hoon? 🩺</strong><br>
+          <span style="color: #475569; font-size: 0.84rem; display: block; margin-top: 4px;">
+            Main <strong>Dr. Bot AI</strong> hoon. Aap mujhse kisi bhi <strong>dawaai, bimari, lakshan, prescription</strong> ya <strong>koi bhi sawaal</strong> pooch sakte hain — main aapko Google aur Medical Knowledge Base se sahi jaankari dunga!
+          </span>
         `
       };
     }
 
-    // B. Gratitude / Courtesy
+    // B. Farewell / Goodbye
+    if (this.isFarewell(cleanInput)) {
+      return {
+        type: "chat",
+        text: "Alvida! Apna khayal rakhein aur swasth rahein 🌿. Jab bhi madad chahiye ho, mujhe zaroor poochhein."
+      };
+    }
+
+    // C. Gratitude / Courtesy
     if (this.isThanks(cleanInput)) {
       return {
         type: "chat",
-        text: "Aapka swagat hai! Swasth rahein 🌿. Agar koi aur medical ya dawaai ka sawaal ho toh zaroor poochhein."
+        text: "Aapka swagat hai! Swasth rahein 🌿. Agar koi aur sawaal ho toh bejhijhak poochhein."
       };
     }
 
-    // C. Identity
+    // D. Identity
     if (this.isIdentity(cleanInput)) {
       return {
         type: "chat",
-        text: "Main **Dr. Bot** hoon — Medico AI ka Clinical Assistant 🩺. Main aapko Google Clinical standards aur genuine pharmacology ke anusar dawaaiyon ke sahi samay, dosage, parhez aur generic bachat ki sateek jaankari deta hoon."
+        text: "Main <strong>Dr. Bot AI</strong> hoon — Medico AI ka Intelligent Assistant 🩺. Main aapke har medical, dawaai aur general sawaal ka jawab Google Web Search aur Clinical Knowledge Base se dhoondh kar deta hoon."
       };
     }
 
-    // D. Order Tracking & Order History
-    const isOrderQuery = cleanInput.includes("order") || cleanInput.includes("track") || cleanInput.includes("status") || 
-                         cleanInput.includes("kahan hai") || cleanInput.includes("kab aayega") || cleanInput.includes("delivery");
+    // E. Order Tracking & Order History
+    const isOrderQuery = this.hasAnyKeyword(cleanInput, [
+      "my order", "order status", "track order", "order kahan", "order kab", "delivery status", "track my"
+    ]) || (this.hasKeyword(cleanInput, "order") && (cleanInput.includes("track") || cleanInput.includes("status") || cleanInput.includes("kahan") || cleanInput.includes("kab")));
     if (isOrderQuery && typeof db !== "undefined") {
       return this.handleOrderQuery();
     }
 
-    // E. Doctor Prescription / Parchi Explanation
-    const isRxQuery = cleanInput.includes("prescription") || cleanInput.includes("parchi") || 
+    // F. Doctor Prescription / Parchi Explanation
+    const isRxQuery = cleanInput.includes("prescription") || cleanInput.includes("parchi") ||
                       cleanInput.includes("kya kya likha") || cleanInput.includes("kya likha") ||
                       cleanInput.includes("konsi dwai") || cleanInput.includes("konsi dawa") || cleanInput.includes("konsi dawai") ||
                       cleanInput.includes("kaunsi dawai") || cleanInput.includes("doctor ne kya") ||
@@ -695,12 +701,13 @@ class DrBotEngine {
       return this.handlePrescriptionQuery();
     }
 
-    // F. Payment & COD Query
-    if (cleanInput.includes("payment") || cleanInput.includes("cod") || cleanInput.includes("cash on delivery") || cleanInput.includes("charge")) {
+    // G. Payment & COD Query
+    const isPaymentQuery = this.hasAnyKeyword(cleanInput, ["cash on delivery", "cod", "payment method", "delivery charge", "shipping charge"]);
+    if (isPaymentQuery) {
       return this.handlePaymentQuery();
     }
 
-    // G. Normal Health Standards & Vitals Lookup (BP, Sugar, Water, etc.)
+    // H. Normal Health Standards & Vitals Lookup (BP, Sugar, Water, etc.)
     const matchedVital = this.findVital(cleanInput);
     if (matchedVital) {
       return {
@@ -711,13 +718,13 @@ class DrBotEngine {
       };
     }
 
-    // H. Specific Medicine Lookup (e.g. "Dolo 650 kab leni hai?", "Pan-D khali pet kyu?", "Azithromycin")
+    // I. Specific Medicine Lookup (e.g. "Dolo 650 kab leni hai?", "Pan-D khali pet kyu?", "Azithromycin")
     const matchedMed = this.findMedicine(cleanInput);
     if (matchedMed) {
       return this.generateMedicineResponse(matchedMed, cleanInput);
     }
 
-    // I. Disease & Clinical Conditions Lookup (e.g. Bukhar, Acidity, Cough, Loose Motion, Dengue)
+    // J. Disease & Clinical Conditions Lookup (e.g. Bukhar, Acidity, Cough, Loose Motion, Dengue)
     const matchedCondition = this.findCondition(cleanInput);
     if (matchedCondition) {
       return {
@@ -732,46 +739,91 @@ class DrBotEngine {
       };
     }
 
-    // J. Real-Time Google / Wikipedia Medical Search Fallback
-    // If not in internal curated bank, dynamically query medical database via open Wikipedia REST API
-    const liveSearchResult = await this.performLiveMedicalSearch(rawInput, cleanInput);
+    // K. Real-Time Google & Web Knowledge Search (for ANY medical or general question)
+    const liveSearchResult = await this.performLiveGoogleSearch(rawInput, cleanInput);
     if (liveSearchResult) {
       return liveSearchResult;
     }
 
-    // K. Smart Synthesizer Fallback (Direct, professional, without dumping irrelevant bloated text)
-    return this.generateSmartFallback(rawInput, cleanInput);
+    // L. Clean Offline / No-Result Fallback with Direct Google Search Link
+    return this.generateSmartFallback(rawInput);
   }
 
   // -------------------------------------------------------------
   // HELPER METHODS & MATCHER LOGIC
   // -------------------------------------------------------------
+  escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  hasKeyword(text, kw) {
+    const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(^|\\s|[^a-z0-9])${escaped}($|\\s|[^a-z0-9])`, "i");
+    return regex.test(text);
+  }
+
+  hasAnyKeyword(text, keywords) {
+    return keywords.some(kw => this.hasKeyword(text, kw));
+  }
+
+  normalizeRepeatedChars(word) {
+    // Collapses 2+ identical consecutive letters: "hyyy" -> "hy", "helooo" -> "helo", "hiiii" -> "hi"
+    return word.replace(/(.)\1+/g, "$1");
+  }
+
   isGreeting(text) {
-    const greetingWords = [
-      "hi", "hello", "hey", "namaste", "namaskar", "pranam", "ram ram", "kem cho",
-      "kaise ho", "kya haal", "kya hal", "kese ho", "hlo", "hii", "helo",
-      "good morning", "good afternoon", "good evening", "dr bot", "doctor bot", "hello doctor"
+    const cleaned = text.replace(/[!.,?~❤️🩺🙏😊👋]+/g, " ").replace(/\s+/g, " ").trim();
+    if (!cleaned) return false;
+
+    const greetingPhrases = [
+      "hi", "hy", "hello", "helo", "hey", "hlo", "namaste", "namaskar", "pranam",
+      "ram ram", "kem cho", "salam", "assalam", "assalamualaikum", "kaise ho",
+      "kya haal", "kya hal", "kese ho", "how are you", "how r u", "good morning",
+      "good afternoon", "good evening", "gm", "ge", "dr bot", "doctor bot",
+      "hello doctor", "hi doctor", "hello bot", "hi bot", "sup", "yo"
     ];
-    // Exact or starting with greeting word
-    const tokens = text.split(/\s+/);
-    if (tokens.length <= 4) {
-      return greetingWords.some(g => text === g || text.startsWith(g + " ") || text.endsWith(" " + g));
+
+    const tokens = cleaned.split(/\s+/);
+    if (tokens.length <= 5) {
+      const normalizedText = tokens.map(t => this.normalizeRepeatedChars(t)).join(" ");
+      // Also collapse 3+ chars to 2 chars (e.g. "hellooo" -> "helloo" / "helo")
+      const softCollapsed = tokens.map(t => t.replace(/(.)\1{2,}/g, "$1$1")).join(" ");
+
+      return greetingPhrases.some(g =>
+        this.hasKeyword(cleaned, g) ||
+        this.hasKeyword(normalizedText, g) ||
+        this.hasKeyword(softCollapsed, g) ||
+        cleaned === g ||
+        normalizedText === g
+      );
     }
     return false;
   }
 
+  isFarewell(text) {
+    const cleaned = text.replace(/[!.,?~]+/g, " ").trim();
+    const farewellWords = ["bye", "goodbye", "good bye", "alvida", "see you", "good night", "gn", "take care"];
+    return cleaned.split(/\s+/).length <= 4 && this.hasAnyKeyword(cleaned, farewellWords);
+  }
+
   isThanks(text) {
-    const thanksWords = ["thank", "thanks", "dhanyawad", "dhanyavad", "shukriya", "ok", "okay", "theek hai", "thik hai", "shukriya doctor"];
-    return thanksWords.some(w => text === w || text.startsWith(w + " ") || text.endsWith(" " + w));
+    const cleaned = text.replace(/[!.,?~]+/g, " ").trim();
+    const thanksWords = ["thank", "thanks", "thank you", "thankyou", "thx", "ty", "dhanyawad", "dhanyavad", "shukriya", "ok", "okay", "theek hai", "thik hai", "nice", "great", "awesome", "perfect"];
+    return cleaned.split(/\s+/).length <= 5 && this.hasAnyKeyword(cleaned, thanksWords);
   }
 
   isIdentity(text) {
-    return text.includes("who are you") || text.includes("aap kaun ho") || text.includes("tum kaun ho") || text.includes("apne bare me");
+    return text.includes("who are you") || text.includes("what is your name") || text.includes("aap kaun ho") || text.includes("tum kaun ho") || text.includes("aap kon ho") || text.includes("apne bare me");
   }
 
   findVital(text) {
     for (const v of this.vitalsKB) {
-      if (v.triggers.some(t => text.includes(t))) {
+      if (v.triggers.some(t => this.hasKeyword(text, t))) {
         return v;
       }
     }
@@ -779,18 +831,18 @@ class DrBotEngine {
   }
 
   findMedicine(text) {
-    // 1. Check local medicinesKB
+    // 1. Check local medicinesKB with word boundaries
     for (const med of this.medicinesKB) {
-      if (med.names.some(n => text.includes(n))) {
+      if (med.names.some(n => this.hasKeyword(text, n))) {
         return med;
       }
     }
     // 2. Check global MEDICINES_DATA
     if (typeof MEDICINES_DATA !== "undefined") {
-      const found = MEDICINES_DATA.find(m => 
-        text.includes(m.name.toLowerCase().split(" ")[0]) ||
-        text.includes(m.brandName.toLowerCase().split(" ")[0]) ||
-        text.includes(m.genericName.toLowerCase().split(" ")[0])
+      const found = MEDICINES_DATA.find(m =>
+        this.hasKeyword(text, m.name.toLowerCase().split(" ")[0]) ||
+        this.hasKeyword(text, m.brandName.toLowerCase().split(" ")[0]) ||
+        this.hasKeyword(text, m.genericName.toLowerCase().split(" ")[0])
       );
       if (found) {
         return {
@@ -847,7 +899,7 @@ class DrBotEngine {
     for (const c of this.conditionsKB) {
       let score = 0;
       for (const kw of c.keywords) {
-        if (text.includes(kw)) {
+        if (this.hasKeyword(text, kw)) {
           score += kw.length > 4 ? 3 : 2;
         }
       }
@@ -861,76 +913,288 @@ class DrBotEngine {
   }
 
   // -------------------------------------------------------------
-  // 5. LIVE GOOGLE / WIKIPEDIA MEDICAL SEARCH INTEGRATION
+  // 5. LIVE GOOGLE & WEB KNOWLEDGE SEARCH INTEGRATION
   // -------------------------------------------------------------
-  async performLiveMedicalSearch(rawInput, cleanInput) {
-    // Extract likely medical query topic
-    // Strip filler words: "kya hai", "ke baare me batao", "what is", "about"
-    let topic = cleanInput
-      .replace(/^(what is|who is|kya hota hai|kya hai|batao|kripya|please|tell me about|information about)\s*/gi, "")
-      .replace(/\s*(kya hai|kya hota hai|ke bare me batao|ke bare me|bataiye|hoga|hai)$/gi, "")
+  buildSearchQueries(rawInput, cleanInput) {
+    let stripped = cleanInput
+      .replace(/[?!.,'"]+/g, " ")
+      .replace(/\b(what is|what are|who is|who was|where is|when was|why does|why do|how to|tell me about|information about|explain|define|meaning of|please|pls|kripya|batao|bataiye|samjhao|kya hota hai|kya hoti hai|kya hote hain|kya hai|kaun hai|kon hai|ke bare me|ke baare me|ki jankari|in hindi|hindi me)\b/gi, " ")
+      .replace(/\s+/g, " ")
       .trim();
 
-    if (!topic || topic.length < 3) return null;
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
-
-      const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`;
-      const response = await fetch(url, { signal: controller.signal });
-      clearTimeout(timeoutId);
-
-      if (response && response.ok) {
-        const data = await response.json();
-        if (data && data.extract && data.type !== "disambiguation") {
-          return {
-            type: "direct_answer",
-            title: `Google Medical & Clinical Definition: ${data.title}`,
-            htmlContent: `
-              <p style="margin-bottom: 8px;"><strong>${data.title}</strong> ke baare me verified medical jankari:</p>
-              <div style="background: white; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.85rem; line-height: 1.5; color: #334155; margin-bottom: 8px;">
-                ${data.extract}
-              </div>
-              <p style="font-size: 0.8rem; color: #64748b;">
-                🔍 <em>Source: Medical Encyclopedia & Google Knowledge Graph. Kisi bhi dawai ya ilaaj ke liye registered physician se consult karein.</em>
-              </p>
-            `,
-            recommendedMedIds: []
-          };
-        }
-      }
-    } catch (e) {
-      // Offline or network timeout, gracefully proceed to smart synthesizer
+    if (!stripped || stripped.length < 2) {
+      stripped = rawInput.replace(/[?!.,'"]+/g, " ").trim();
     }
-    return null;
+
+    // Translate common Hinglish medical & general terms to English for accurate web search
+    const hinglishMap = {
+      "sar dard": "headache",
+      "sir dard": "headache",
+      "pet dard": "abdominal pain",
+      "kamar dard": "back pain",
+      "ghutne dard": "knee pain",
+      "dant dard": "toothache",
+      "bukhar": "fever",
+      "khansi": "cough",
+      "sardi": "common cold",
+      "gale me kharash": "sore throat",
+      "kami": "deficiency",
+      "lakshan": "symptoms",
+      "ilaj": "treatment",
+      "ilaaj": "treatment",
+      "karan": "causes",
+      "nuksan": "side effects",
+      "fayde": "benefits",
+      "dawai": "medicine",
+      "dawa": "medicine",
+      "chakkar": "dizziness",
+      "neend": "sleep",
+      "thakan": "fatigue",
+      "sujan": "inflammation",
+      "khujli": "itching",
+      "ulti": "vomiting",
+      "dast": "diarrhea",
+      "kabz": "constipation",
+      "motapa": "obesity",
+      "pathri": "kidney stone",
+      "piliya": "jaundice",
+      "dama": "asthma",
+      "gathiya": "arthritis",
+      "bawasir": "hemorrhoids",
+      "lakwa": "stroke",
+      "khoon": "blood",
+      "dil": "heart",
+      "gurda": "kidney",
+      "jigar": "liver",
+      "phephde": "lungs",
+      "bharat": "India",
+      "rajdhani": "capital",
+      "pradhanmantri": "prime minister"
+    };
+
+    let englishQuery = stripped;
+    for (const [hi, en] of Object.entries(hinglishMap)) {
+      const rx = new RegExp(`(^|\\s)${hi}(\\s|$)`, "gi");
+      englishQuery = englishQuery.replace(rx, `$1${en}$2`);
+    }
+    englishQuery = englishQuery
+      .replace(/\b(ki|ke|ka|ko|se|me|mein|par|aur|ya|kyu|kyon|hota|hoti|hai|hain|kya|kaise|kitna|kitni|chahiye)\b/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return {
+      primary: englishQuery.length >= 2 ? englishQuery : stripped,
+      original: stripped,
+      hasDevanagari: /[\u0900-\u097F]/.test(rawInput)
+    };
   }
 
-  generateSmartFallback(rawInput, cleanInput) {
-    const isTimingQuery = cleanInput.includes("kab") || cleanInput.includes("time") || cleanInput.includes("kaise");
-    const isDietQuery = cleanInput.includes("khana") || cleanInput.includes("parhez") || cleanInput.includes("kya khaye");
+  async fetchWithTimeout(url, timeoutMs = 4000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      return res;
+    } catch (err) {
+      clearTimeout(timer);
+      return null;
+    }
+  }
+
+  async searchWikipedia(query, lang = "en") {
+    if (!query || query.length < 2) return null;
+    try {
+      const searchUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*&srlimit=3`;
+      const searchRes = await this.fetchWithTimeout(searchUrl, 4000);
+      if (!searchRes || !searchRes.ok) return null;
+
+      const searchData = await searchRes.json();
+      const hits = searchData?.query?.search;
+      if (!hits || hits.length === 0) return null;
+
+      const topHit = hits[0];
+      const extractUrl = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&exsentences=5&pageids=${topHit.pageid}&format=json&origin=*`;
+      const extractRes = await this.fetchWithTimeout(extractUrl, 4000);
+
+      let extractText = "";
+      if (extractRes && extractRes.ok) {
+        const extractData = await extractRes.json();
+        const page = extractData?.query?.pages?.[topHit.pageid];
+        extractText = (page?.extract || "").trim();
+      }
+
+      if (!extractText) {
+        extractText = topHit.snippet.replace(/<[^>]+>/g, "");
+      }
+
+      return {
+        title: topHit.title,
+        extract: extractText,
+        url: `https://${lang}.wikipedia.org/?curid=${topHit.pageid}`,
+        related: hits.slice(1).map(h => ({
+          title: h.title,
+          snippet: h.snippet.replace(/<[^>]+>/g, "")
+        }))
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async searchOpenFDA(query) {
+    const cleanDrug = query
+      .replace(/\b(tablet|tablets|capsule|syrup|mg|dosage|dose|uses|use|side effects|warnings|medicine|drug)\b/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!cleanDrug || cleanDrug.length < 3 || cleanDrug.split(" ").length > 3) return null;
+
+    try {
+      const encoded = encodeURIComponent(cleanDrug);
+      const url = `https://api.fda.gov/drug/label.json?search=(openfda.brand_name:"${encoded}"+openfda.generic_name:"${encoded}")&limit=1`;
+      const res = await this.fetchWithTimeout(url, 3500);
+      if (!res || !res.ok) return null;
+
+      const data = await res.json();
+      const result = data?.results?.[0];
+      if (!result) return null;
+
+      const trimText = (arr, maxLen = 320) => {
+        if (!arr || !arr[0]) return "";
+        const clean = arr[0].replace(/\s+/g, " ").trim();
+        return clean.length > maxLen ? clean.slice(0, maxLen).trim() + "..." : clean;
+      };
+
+      const indications = trimText(result.indications_and_usage);
+      const dosage = trimText(result.dosage_and_administration, 240);
+      const warnings = trimText(result.warnings || result.adverse_reactions, 240);
+
+      if (!indications && !dosage) return null;
+
+      return {
+        brand: result.openfda?.brand_name?.[0] || cleanDrug,
+        generic: result.openfda?.generic_name?.[0] || "",
+        indications,
+        dosage,
+        warnings
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async searchDuckDuckGo(query) {
+    try {
+      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+      const res = await this.fetchWithTimeout(url, 3000);
+      if (!res || !res.ok) return null;
+      const data = await res.json();
+      const text = data.Answer || data.AbstractText || "";
+      if (!text || text.length < 10) return null;
+      return {
+        heading: data.Heading || query,
+        text,
+        source: data.AbstractSource || "Web Knowledge",
+        url: data.AbstractURL || ""
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async performLiveGoogleSearch(rawInput, cleanInput) {
+    const queries = this.buildSearchQueries(rawInput, cleanInput);
+    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(rawInput)}`;
+
+    const [wikiEn, wikiHi, fdaData, ddgData] = await Promise.all([
+      this.searchWikipedia(queries.primary, "en"),
+      queries.hasDevanagari ? this.searchWikipedia(queries.original, "hi") : Promise.resolve(null),
+      this.searchOpenFDA(queries.primary),
+      this.searchDuckDuckGo(queries.primary)
+    ]);
+
+    // If primary translated query missed on English Wiki, try original stripped query
+    let wikiResult = wikiHi || wikiEn;
+    if (!wikiResult && queries.original !== queries.primary) {
+      wikiResult = await this.searchWikipedia(queries.original, "en");
+    }
+
+    if (!wikiResult && !fdaData && !ddgData) {
+      return null;
+    }
+
+    const safeInput = this.escapeHtml(rawInput);
+    let htmlParts = [];
+
+    if (ddgData) {
+      htmlParts.push(`
+        <div style="background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 8px;">
+          <strong style="color: #0f172a; font-size: 0.88rem; display: block; margin-bottom: 4px;">${this.escapeHtml(ddgData.heading)}</strong>
+          <p style="font-size: 0.85rem; line-height: 1.55; color: #334155; margin: 0;">${this.escapeHtml(ddgData.text)}</p>
+        </div>
+      `);
+    }
+
+    if (fdaData) {
+      htmlParts.push(`
+        <div style="background: #f0fdf4; padding: 10px 12px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 8px;">
+          <strong style="color: #065f46; font-size: 0.86rem; display: block; margin-bottom: 4px;">
+            💊 Official Clinical Drug Info: ${this.escapeHtml(fdaData.brand)} ${fdaData.generic ? `(${this.escapeHtml(fdaData.generic)})` : ""}
+          </strong>
+          ${fdaData.indications ? `<p style="font-size: 0.82rem; color: #1e293b; margin: 4px 0;"><strong>Uses:</strong> ${this.escapeHtml(fdaData.indications)}</p>` : ""}
+          ${fdaData.dosage ? `<p style="font-size: 0.82rem; color: #1e293b; margin: 4px 0;"><strong>Dosage:</strong> ${this.escapeHtml(fdaData.dosage)}</p>` : ""}
+          ${fdaData.warnings ? `<p style="font-size: 0.8rem; color: #92400e; margin: 4px 0;"><strong>⚠️ Warnings:</strong> ${this.escapeHtml(fdaData.warnings)}</p>` : ""}
+        </div>
+      `);
+    }
+
+    if (wikiResult && (!ddgData || wikiResult.title.toLowerCase() !== ddgData.heading.toLowerCase())) {
+      htmlParts.push(`
+        <div style="background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 8px;">
+          <strong style="color: #047857; font-size: 0.88rem; display: block; margin-bottom: 4px;">📖 ${this.escapeHtml(wikiResult.title)}</strong>
+          <p style="font-size: 0.85rem; line-height: 1.55; color: #334155; margin: 0;">${this.escapeHtml(wikiResult.extract)}</p>
+        </div>
+      `);
+    }
+
+    const titleText = ddgData?.heading || fdaData?.brand || wikiResult?.title || safeInput;
+
+    htmlParts.push(`
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+        <span style="font-size: 0.76rem; color: #64748b;">🔍 Source: Google Web & Medical Knowledge</span>
+        <a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer"
+           style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700; color: #059669; text-decoration: none; background: #ecfdf5; padding: 4px 10px; border-radius: 999px; border: 1px solid #a7f3d0;">
+          🔎 Google par poora result dekhein →
+        </a>
+      </div>
+    `);
 
     return {
       type: "direct_answer",
-      title: "Google Clinical & Medical Assistant",
+      title: `Google Answer: ${this.escapeHtml(titleText)}`,
+      htmlContent: htmlParts.join(""),
+      recommendedMedIds: []
+    };
+  }
+
+  generateSmartFallback(rawInput) {
+    const safeInput = this.escapeHtml(rawInput);
+    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(rawInput)}`;
+
+    return {
+      type: "direct_answer",
+      title: "Google Search Assistant",
       htmlContent: `
-        <p style="margin-bottom: 6px;">Aapne poochha: <em>"${rawInput}"</em></p>
-        <p style="margin-bottom: 6px;"><strong>Google Medical Guidance:</strong></p>
-        <ul style="margin: 4px 0 6px 18px; font-size: 0.85rem;">
-          ${isTimingQuery ? `
-            <li><strong>Dawai Timing Golden Rule:</strong> Acidity aur Thyroid ki dawai hamesha <strong>khali pet (subah)</strong> li jaati hai.</li>
-            <li>Painkiller (Dolo/Zerodol) aur Antibiotic hamesha <strong>khana khane ke baad</strong> 1 glass paani ke sath li jaati hain.</li>
-          ` : isDietQuery ? `
-            <li>Bimari me halka, supaachya aahar (moong daal khichdi, daliya, nariyal paani) lein.</li>
-            <li>Oily, teekha, bahar ka fast-food aur cold drinks bilkul band karein.</li>
-          ` : `
-            <li>Kisi bhi bimari ya dawai ke sevan me sahi samay (timing) aur nirdharit matra (dosage) ka palan karna zaroori hai.</li>
-            <li>Har dawai ko taaze paani ke sath lein, chai ya coffee ke sath kabhi na lein.</li>
-          `}
-        </ul>
-        <p style="font-size: 0.8rem; color: #64748b; margin-top: 6px;">
-          🩺 <em>Aap mujhse kisi specific dawai (jaise Dolo, Pan-D, Azithromycin) ya lakshan (bukhar, acidity) ke baare me pooch sakte hain.</em>
+        <p style="margin-bottom: 8px; font-size: 0.86rem; color: #334155;">
+          Aapne poochha: <strong>"${safeInput}"</strong>
         </p>
+        <p style="margin-bottom: 10px; font-size: 0.84rem; color: #475569; line-height: 1.5;">
+          Abhi live web snippet load nahi ho paya (network ya specific query ki wajah se). Aap seedhe Google par iska exact answer dekh sakte hain:
+        </p>
+        <a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer"
+           style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: #ffffff; background: #059669; padding: 7px 14px; border-radius: 8px; text-decoration: none;">
+          🔎 Google par "${safeInput}" Search Karein →
+        </a>
       `,
       recommendedMedIds: []
     };
